@@ -8,7 +8,7 @@ locally without containers.
 
 1. Install **Java 17** and **Maven**.
 2. Create a local MySQL database called `kartingrm` and make sure it is
-   accessible at `localhost:3306` with user `kartuser` and password `kartpass`.
+   accessible at `localhost:3306` with user `root` and password `password`.
    You can change these values in
    `kartingrm/src/main/resources/application.properties`.
 3. From the `kartingrm` directory run:
