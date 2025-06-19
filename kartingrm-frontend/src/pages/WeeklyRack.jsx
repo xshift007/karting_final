@@ -85,12 +85,12 @@ export default function WeeklyRack({ onCellClickAdmin }) {
 
         <TableBody>
           {slots.map(range => {
-            const [start,end] = range.split('-')
+            const [start,_end] = range.split('-')
             return (
               <TableRow key={range}>
                 <TableCell sx={{ fontWeight:500 }}>{range}</TableCell>
 
-                {DOW.map((d,idx)=>{
+                {DOW.map(d=>{
                   const ses = rack?.[d]?.find(s=>s.startTime === start)
 
                   if (!ses) return <TableCell key={d+range}></TableCell>

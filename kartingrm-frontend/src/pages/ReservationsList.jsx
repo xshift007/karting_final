@@ -6,10 +6,12 @@ import {
   Paper, Button, Stack, Typography
 } from '@mui/material'
 import reservationService from '../services/reservation.service'
+import { useNotify } from '../hooks/useNotify'
 
 export default function ReservationsList() {
   const [list, setList] = useState([])
   const navigate = useNavigate()
+  const notify = useNotify()
 
   /* carga con AbortController */
   useEffect(() => {
@@ -31,7 +33,7 @@ export default function ReservationsList() {
 
   const cancel = id =>
     reservationService.cancel(id).then(reload)
-      .catch(err => alert(err.response?.data?.message || err.message))
+      .catch(err => notify(err.response?.data?.message || err.message,'error'))
 
   return (
     <Paper sx={{ p:2 }}>
@@ -55,7 +57,9 @@ export default function ReservationsList() {
             <TableRow key={r.id}>
               <TableCell>{r.reservationCode}</TableCell>
               <TableCell>{r.client.fullName}</TableCell>
-              <TableCell>{r.session.sessionDate}</TableCell>
+              <TableCell sx={{ display:{ xs:'none', md:'table-cell' } }}>
+                {r.session.sessionDate}
+              </TableCell>
               <TableCell>{`${r.session.startTime}-${r.session.endTime}`}</TableCell>
               <TableCell>{r.participants}</TableCell>
               <TableCell>{r.rateType}</TableCell>

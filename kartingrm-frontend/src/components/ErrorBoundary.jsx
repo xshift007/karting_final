@@ -1,8 +1,10 @@
 // src/components/ErrorBoundary.jsx
 import React from 'react'
 import { Container, Typography, Button } from '@mui/material'
+import { NotifyContext } from '../hooks/useNotify'
 
 export class ErrorBoundary extends React.Component {
+  static contextType = NotifyContext
   constructor(props) {
     super(props)
     this.state = { hasError: false }
@@ -24,8 +26,8 @@ export class ErrorBoundary extends React.Component {
   }
 
   handleHttpError = (e) => {
-    // Aquí podrías llamar a un Snackbar de MUI
-    alert(e.detail)
+    const notify = this.context
+    notify(e.detail,'error')
   }
 
   handleReload = () => {

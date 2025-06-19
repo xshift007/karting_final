@@ -2,11 +2,13 @@ import React, { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Paper, Typography, Button, Stack } from '@mui/material'
 import paymentService from '../services/payment.service'
+import { useNotify } from '../hooks/useNotify'
 
 export default function PaymentPage() {
   const { reservationId } = useParams()
   const [paid, setPaid]   = useState(false)
   const navigate          = useNavigate()
+  const notify            = useNotify()
 
   const handlePay = () => {
     paymentService.pay({ reservationId, method:'cash' })
@@ -21,7 +23,7 @@ export default function PaymentPage() {
         window.open(url,'_blank')
         URL.revokeObjectURL(url)
       })
-      .catch(e => alert(e.response?.data?.message||e.message))
+      .catch(e => notify(e.response?.data?.message||e.message,'error'))
   }
 
   return (
