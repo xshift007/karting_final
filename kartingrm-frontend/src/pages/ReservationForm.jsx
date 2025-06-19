@@ -23,7 +23,6 @@ import { computePrice, buildTariffMaps } from '../helpers'
 
 /* ---------------- esquema ---------------- */
 const schema = yup.object({
-  reservationCode : yup.string().required(),
   clientId        : yup.number().required('Cliente obligatorio'),
   sessionDate     : yup.date().required('Fecha obligatoria'),
   startTime       : yup.string().required('Hora inicio obligatoria'),
@@ -62,7 +61,6 @@ export default function ReservationForm(){
     resolver : yupResolver(schema),
     mode     : 'onChange',
     defaultValues:{
-      reservationCode : '',
       clientId        : '',
       sessionDate     : dayjs().format('YYYY-MM-DD'),
       startTime       : '',
@@ -92,11 +90,7 @@ export default function ReservationForm(){
   )
 
   /* ---------- efectos ---------- */
-
-  /* 1) código aleatorio */
-  useEffect(()=> setValue('reservationCode','R'+nanoid(6).toUpperCase()), [setValue])
-
-  /* 2) prefills desde la URL (?d, ?s, ?e) */
+  /* 1) prefills desde la URL (?d, ?s, ?e) */
   useEffect(()=>{
     const p = new URLSearchParams(location.search)
     p.get('d') && setValue('sessionDate', p.get('d'))
@@ -144,8 +138,12 @@ export default function ReservationForm(){
       setToast({open:true,msg:'Reserva creada',severity:'success'})
       // opcional: redirect...
     }catch(e){
-      setToast({open:true,msg:e.response?.data?.message||e.message,severity:'error'})
-      notify(e.response?.data?.message||e.message,'error')
+      if(e.response?.status===409){
+        notify('El código ya existe. Intenta de nuevo.','error')
+      }else{
+        setToast({open:true,msg:e.response?.data?.message||e.message,severity:'error'})
+        notify(e.response?.data?.message||e.message,'error')
+      }
     }
   }
 

@@ -12,19 +12,16 @@ export default function PaymentPage() {
   const notify            = useNotify()
 
   const handlePay = async () => {
+    setLoading(true)
     try {
-      setLoading(true)
-      const { data:{ id } } = await paymentService.pay({
-        reservationId,
-        method:'cash'
-      })
+      const { data:{ id } } = await paymentService.pay({ reservationId, method:'cash' })
+      const pdf = await paymentService.receipt(id)
+      const blob = new Blob([pdf.data],{ type:'application/pdf' })
+      const url  = window.URL.createObjectURL(blob)
+      const win  = window.open(url,'_blank','noopener')
+      if(!win) notify('Activa las ventanas emergentes para ver el comprobante','warning')
+      setTimeout(()=>window.URL.revokeObjectURL(url),10000)
       setPaid(true)
-      const { data } = await paymentService.receipt(id)
-      const url = window.URL.createObjectURL(
-        new Blob([data], { type:'application/pdf' })
-      )
-      window.open(url,'_blank')
-      setTimeout(() => window.URL.revokeObjectURL(url), 4000)
       notify('Pago realizado ✅','success')
     } catch (e) {
       notify(e.response?.data?.message || e.message, 'error')
