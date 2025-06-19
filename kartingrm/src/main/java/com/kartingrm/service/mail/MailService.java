@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.mail.javamail.*;
 import org.springframework.stereotype.Service;
+import org.springframework.scheduling.annotation.Async;
 
 @Service
 @RequiredArgsConstructor
@@ -15,6 +16,7 @@ public class MailService {
 
     private final JavaMailSender sender;
 
+    @Async
     public void sendReceipt(Reservation r, byte[] pdf){
         r.getParticipantsList().stream()
                 .map(Participant::getEmail)
