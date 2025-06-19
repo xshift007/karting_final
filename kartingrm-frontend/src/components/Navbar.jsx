@@ -15,12 +15,13 @@ export default function Navbar(){
         <Stack direction="row" spacing={2}>
           <Button color="inherit" component={RouterLink} to="/home">Home</Button>
           <Button color="inherit" component={RouterLink} to="/rack">Rack</Button>
-          <Button color="inherit" component={RouterLink} to="/reservations">Booking</Button>
+          <Button color="inherit" component={RouterLink} to="/reservations">Reservas</Button>
           <Button color="inherit" component={RouterLink} to="/reports">Reportes</Button>
           <Button color="inherit" component={RouterLink} to="/clients">Clientes</Button>
           <Button color="inherit" component={RouterLink} to="/sessions">Sesiones</Button>
           <Button color="inherit" component={RouterLink} to="/tariffs">Tarifas</Button>
-          <Button color="inherit" component={RouterLink} to="/rack-admin">Rack Admin</Button>
+          <Button color="inherit" component={RouterLink} to="/rack-admin">Rack admin</Button>
+          <Button color="inherit" component={RouterLink} to="/help">Ayuda</Button>
 
         </Stack>
       </Toolbar>

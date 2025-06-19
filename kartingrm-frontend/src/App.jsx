@@ -1,11 +1,12 @@
 // src/App.jsx
 
 import React, { Suspense, lazy } from 'react'
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom'
 import CssBaseline from '@mui/material/CssBaseline'
 import Container from '@mui/material/Container'
 import { CircularProgress } from '@mui/material'
 import Navbar from './components/Navbar'
+import { useHotkeys } from 'react-hotkeys-hook'
 
 // Carga perezosa (code splitting) de cada página para optimizar el bundle(conjunto de archivos JavaScript, CSS que el sistema)
 // agrupa en uno o varios ficheros finales que se envían al navegador
@@ -22,8 +23,12 @@ const PaymentPage      = lazy(() => import('./pages/PaymentPage'))
 const NotFound         = lazy(() => import('./pages/NotFound'))
 const TariffsCrud      = lazy(() => import('./pages/TariffsCrud'))
 const WeeklyRackAdmin  = lazy(() => import('./pages/WeeklyRackAdmin'))
+const Help            = lazy(() => import('./pages/Help'))
 
 export default function App() {
+  const navigate = useNavigate()
+  useHotkeys('g h', ()=> navigate('/home'))
+  useHotkeys('g r', ()=> navigate('/reservations'))
   return (
     <>
       {/* Normaliza estilos base y tipografías con Material-UI */}
@@ -53,6 +58,7 @@ export default function App() {
             <Route path="/clients" element={<ClientsCrud />} />
             <Route path="/sessions" element={<SessionsCrud />} />
             <Route path="/reports" element={<ReportCharts />} />
+            <Route path="/help" element={<Help />} />
             {/* Ruta comodín para 404 */}
             <Route path="*" element={<NotFound />} />
             <Route path="/tariffs" element={<TariffsCrud/>}/>

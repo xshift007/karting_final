@@ -9,9 +9,11 @@ import { nanoid } from 'nanoid'
 import { isWeekend } from 'date-fns'
 import {
   TextField, Button, Stack, Paper, Typography,
-  MenuItem, IconButton, Alert
+  MenuItem, IconButton, Alert, Snackbar,
+  CircularProgress
 } from '@mui/material'
 import { AddCircle, RemoveCircle } from '@mui/icons-material'
+import { useNotify } from '../hooks/useNotify'
 
 import reservationService from '../services/reservation.service'
 import clientService      from '../services/client.service'
@@ -49,13 +51,13 @@ export default function ReservationForm(){
 
   /* ------------ estado auxiliar ------------ */
   const [clients,  setClients]  = useState([])
-  const [sessions, setSessions] = useState([])
+  const [_sessions, setSessions] = useState([])
   const [tariffs,  setTariffs ] = useState([])       // ← tarifas BD
 
   /* ------------ form principal --------------- */
   const {
     control, setValue, handleSubmit, watch,
-    formState:{ errors, isValid }
+    formState:{ errors, isSubmitting }
   } = useForm({
     resolver : yupResolver(schema),
     mode     : 'onChange',
@@ -74,6 +76,9 @@ export default function ReservationForm(){
     control,
     name:'participantsList'
   })
+
+  const notify = useNotify()
+  const [toast,setToast] = useState({open:false,msg:'',severity:'success'})
 
   /* ---- watchers útiles ---- */
   const sessionDate = watch('sessionDate')
@@ -133,10 +138,16 @@ export default function ReservationForm(){
   },[startTime, rateType, sessionDate, durMap, setValue])
 
   /* ---------- envío ---------- */
-  const onSubmit = data =>
-    reservationService.create(data)
-      .then(res => navigate(`/payments/${res.id}`, { replace:true }))
-      .catch(e  => alert(e.response?.data?.message || e.message))
+  const onSubmit = async data => {
+    try{
+      await reservationService.create(data)
+      setToast({open:true,msg:'Reserva creada',severity:'success'})
+      // opcional: redirect...
+    }catch(e){
+      setToast({open:true,msg:e.response?.data?.message||e.message,severity:'error'})
+      notify(e.response?.data?.message||e.message,'error')
+    }
+  }
 
   /* ---------- resumen ---------- */
   const summary = useMemo(() => {
@@ -289,12 +300,17 @@ export default function ReservationForm(){
 
           <Stack direction="row" spacing={2} justifyContent="flex-end">
             <Button onClick={()=>navigate(-1)}>Cancelar</Button>
-            <Button type="submit" variant="contained" disabled={!isValid}>
+            <Button type="submit" variant="contained" disabled={isSubmitting}>
+              {isSubmitting && <CircularProgress size={20} sx={{mr:1}}/>}
               Guardar
             </Button>
           </Stack>
         </Stack>
       </form>
+      <Snackbar  open={toast.open} autoHideDuration={4000}
+                 onClose={()=>setToast(v=>({...v,open:false}))}>
+        <Alert severity={toast.severity}>{toast.msg}</Alert>
+      </Snackbar>
     </Paper>
   )
 }

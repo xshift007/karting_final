@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react'
 import { DataGrid } from '@mui/x-data-grid'
 import { Button, Paper, Dialog, TextField, Stack } from '@mui/material'
+import ConfirmDialog from '../components/ConfirmDialog'
 import sessionService from '../services/session.service'
 
 export default function SessionsCrud() {
@@ -9,6 +10,7 @@ export default function SessionsCrud() {
   const [open, setOpen] = useState(false)
   const [edit, setEdit] = useState(null)
   const [form, setForm] = useState({ sessionDate:'', startTime:'', endTime:'', capacity:0 })
+  const [confirm,setConfirm] = useState({open:false,id:null})
 
   /* ---------- carga inicial con AbortController ---------- */
   useEffect(() => {
@@ -70,7 +72,7 @@ export default function SessionsCrud() {
                     Editar
                   </Button>
                   <Button size="small" color="error"
-                    onClick={()=> sessionService.delete(params.row.id).then(reload)}>
+                    onClick={()=> setConfirm({open:true,id:params.row.id})}>
                     Eliminar
                   </Button>
                 </>
@@ -105,6 +107,12 @@ export default function SessionsCrud() {
           </Stack>
         </Paper>
       </Dialog>
+      <ConfirmDialog
+        open={confirm.open}
+        msg="¿Eliminar sesión?"
+        onClose={()=>setConfirm({open:false,id:null})}
+        onConfirm={()=>sessionService.delete(confirm.id).then(()=>{setConfirm({open:false,id:null});reload();})}
+      />
     </Paper>
   )
 }

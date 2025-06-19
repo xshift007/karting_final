@@ -46,7 +46,7 @@ export function computePrice ({
 
   /* precios unitarios */
   const afterGroup = base * (1 - g / 100)
-  const ownerUnit  = afterGroup * (1 - f / 100)
+  const _ownerUnit = afterGroup * (1 - f / 100)
   const unitReg    = afterGroup
   const unitBirth  = afterGroup * 0.5
 
