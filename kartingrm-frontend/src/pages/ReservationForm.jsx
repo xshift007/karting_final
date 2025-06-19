@@ -134,9 +134,11 @@ export default function ReservationForm(){
   /* ---------- envío ---------- */
   const onSubmit = async data => {
     try{
-      await reservationService.create(data)
-      setToast({open:true,msg:'Reserva creada',severity:'success'})
-      // opcional: redirect...
+      const res = await reservationService.create(data)
+
+      notify('Reserva creada ✅','success')
+
+      navigate(`/payments/${res.id}`,{ replace:true })
     }catch(e){
       if(e.response?.status===409){
         notify('El código ya existe. Intenta de nuevo.','error')
