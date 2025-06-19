@@ -35,7 +35,7 @@ public class PaymentController {
         byte[] pdf = svc.generateReceipt(id);
 
         return ResponseEntity.ok()
-                .header(CONTENT_DISPOSITION, "attachment; filename=\"comprobante.pdf\"")
+                .header(CONTENT_DISPOSITION, "inline; filename=\"comprobante.pdf\"")
                 .contentType(APPLICATION_PDF)
                 .body(pdf);
     }
