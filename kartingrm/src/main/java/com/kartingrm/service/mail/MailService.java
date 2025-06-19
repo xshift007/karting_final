@@ -2,6 +2,7 @@ package com.kartingrm.service.mail;
 
 import com.kartingrm.entity.Participant;
 import com.kartingrm.entity.Reservation;
+import java.util.Objects;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.ByteArrayResource;
@@ -15,9 +16,10 @@ public class MailService {
     private final JavaMailSender sender;
 
     public void sendReceipt(Reservation r, byte[] pdf){
-        for (Participant p : r.getParticipantsList()){
-            send(p.getEmail(), pdf);
-        }
+        r.getParticipantsList().stream()
+                .map(Participant::getEmail)
+                .filter(Objects::nonNull)
+                .forEach(e -> send(e, pdf));
     }
 
     /* ---------- privado ---------- */

@@ -1,29 +1,36 @@
 import React, { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Paper, Typography, Button, Stack } from '@mui/material'
+import { Paper, Typography, Button, Stack, CircularProgress } from '@mui/material'
 import paymentService from '../services/payment.service'
 import { useNotify } from '../hooks/useNotify'
 
 export default function PaymentPage() {
   const { reservationId } = useParams()
   const [paid, setPaid]   = useState(false)
+  const [loading, setLoading] = useState(false)
   const navigate          = useNavigate()
   const notify            = useNotify()
 
-  const handlePay = () => {
-    paymentService.pay({ reservationId, method:'cash' })
-      .then(res => {
-        setPaid(true);
-        const paymentId = res.data.id;
-        return paymentService.receipt(paymentId);
+  const handlePay = async () => {
+    try {
+      setLoading(true)
+      const { data:{ id } } = await paymentService.pay({
+        reservationId,
+        method:'cash'
       })
-      .then(response => {
-        const blob = new Blob([response.data], { type:'application/pdf' })
-        const url  = window.URL.createObjectURL(blob)
-        window.open(url,'_blank')
-        URL.revokeObjectURL(url)
-      })
-      .catch(e => notify(e.response?.data?.message||e.message,'error'))
+      setPaid(true)
+      const { data } = await paymentService.receipt(id)
+      const url = window.URL.createObjectURL(
+        new Blob([data], { type:'application/pdf' })
+      )
+      window.open(url,'_blank')
+      setTimeout(() => window.URL.revokeObjectURL(url), 4000)
+      notify('Pago realizado ✅','success')
+    } catch (e) {
+      notify(e.response?.data?.message || e.message, 'error')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -32,7 +39,8 @@ export default function PaymentPage() {
         Pago reserva #{reservationId}
       </Typography>
       <Stack spacing={2}>
-        <Button variant="contained" onClick={handlePay} disabled={paid}>
+        <Button variant="contained" onClick={handlePay} disabled={loading || paid}>
+          {loading && <CircularProgress size={20} sx={{ mr:1 }} />}
           {paid ? 'Pagado' : 'Pagar ahora'}
         </Button>
         <Button onClick={()=>navigate('/reservations')}>

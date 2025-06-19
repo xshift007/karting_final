@@ -37,6 +37,7 @@ public class ClientService {
     }
 
     public void incrementVisits(Client c){
+        if (!repo.existsById(c.getId())) return;
         visits.save(new Visit(null, c, LocalDate.now()));
     }
 }
