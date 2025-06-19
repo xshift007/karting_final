@@ -27,8 +27,8 @@ const Help            = lazy(() => import('./pages/Help'))
 
 export default function App() {
   const navigate = useNavigate()
-  useHotkeys('g h', ()=> navigate('/home'))
-  useHotkeys('g r', ()=> navigate('/reservations'))
+  useHotkeys('g>h', () => navigate('/home'))
+  useHotkeys('g>r', () => navigate('/reservations'))
   return (
     <>
       {/* Normaliza estilos base y tipografías con Material-UI */}
