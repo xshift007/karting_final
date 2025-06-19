@@ -20,6 +20,8 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
     """)
     int participantsInSession(Long sessionId);
 
+    boolean existsByReservationCode(String reservationCode);
+
 
 
 }

@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
+import java.security.SecureRandom;
 import java.util.List;
 
 @Service
@@ -26,6 +27,9 @@ public class ReservationService {
     private final SessionService sessionService;
     private final PricingService pricing;
     private final MailService mail;
+
+    private static final SecureRandom RND = new SecureRandom();
+    private static final String ABC = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
     @Value("${kartingrm.default-session-capacity:15}")
     private int defaultCapacity;
@@ -47,9 +51,13 @@ public class ReservationService {
         if (already + requested > s.getCapacity())
             throw new IllegalStateException("Capacidad de la sesión superada");
 
-        // 3) Calculamos precios, guardamos reserva y enviamos mail
+        // 3) Generamos código único
+        String code;
+        do { code = nextCode(); } while (repo.existsByReservationCode(code));
+
+        // 4) Calculamos precios, guardamos reserva y enviamos mail
         var pr = pricing.calculate(dto);
-        Reservation r = repo.save(buildEntity(dto, s, pr));
+        Reservation r = repo.save(buildEntity(dto, s, pr, code));
         //TransactionSynchronizationManager.registerSynchronization(
         //        new TransactionSynchronization() {
         //            @Override public void afterCommit() {
@@ -106,14 +114,22 @@ public class ReservationService {
 
     /* ---------------- helpers privados ------------------------------------ */
 
+    private String nextCode() {
+        return RND.ints(6, 0, ABC.length())
+                .mapToObj(ABC::charAt)
+                .collect(StringBuilder::new, StringBuilder::append, StringBuilder::append)
+                .toString();
+    }
+
     private Reservation buildEntity(ReservationRequestDTO dto,
                                     Session s,
-                                    PricingService.PricingResult pr) {
+                                    PricingService.PricingResult pr,
+                                    String code) {
 
         Client c = clients.get(dto.clientId());
 
         Reservation r = new Reservation();
-        r.setReservationCode(dto.reservationCode());
+        r.setReservationCode(code);
         r.setClient(c);
         r.setSession(s);
         r.setDuration(pr.minutes());

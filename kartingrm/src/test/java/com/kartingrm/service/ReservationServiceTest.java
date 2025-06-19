@@ -90,4 +90,20 @@ class ReservationServiceTest {
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage("Capacidad de la sesión superada");
     }
+
+    @Test
+    void generated_code_is_unique() {
+        ReservationRequestDTO dto = new ReservationRequestDTO(
+                null, c.getId(),
+                LocalDate.now().plusDays(2),
+                LocalTime.of(16,0), LocalTime.of(16,30),
+                List.of(new ParticipantDTO("P","p@x.com",false)),
+                RateType.LAP_10);
+
+        Reservation r1 = svc.createReservation(dto);
+        Reservation r2 = svc.createReservation(dto);
+
+        assertThat(r1.getReservationCode())
+                .isNotEqualTo(r2.getReservationCode());
+    }
 }

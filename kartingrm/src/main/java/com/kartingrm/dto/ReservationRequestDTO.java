@@ -10,7 +10,6 @@ import java.util.List;
 
 public record ReservationRequestDTO(
 
-        @NotBlank(message = "El código de reserva no puede estar vacío")
         String reservationCode,
 
         @NotNull(message = "El ID del cliente es obligatorio")
