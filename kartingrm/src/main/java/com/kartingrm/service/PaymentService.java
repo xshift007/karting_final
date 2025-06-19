@@ -54,8 +54,7 @@ public class PaymentService {
         TransactionSynchronizationManager.registerSynchronization(
                 new TransactionSynchronizationAdapter() {
                     @Override public void afterCommit() {
-                        byte[] pdfBytes = pdf.buildReceipt(r, p);
-                        mail.sendReceipt(r, pdfBytes);
+                        mail.sendReceipt(r, pdf.buildReceipt(r, p));
                     }
                 });
 
