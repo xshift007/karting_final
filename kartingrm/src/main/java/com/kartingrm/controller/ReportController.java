@@ -1,7 +1,9 @@
 package com.kartingrm.controller;
 
 import com.kartingrm.dto.IncomeByGroupDTO;
+import com.kartingrm.dto.IncomeByGroupMonthlyDTO;
 import com.kartingrm.dto.IncomeByRateDTO;
+import com.kartingrm.dto.IncomeByRateMonthlyDTO;
 import com.kartingrm.service.ReportService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
@@ -35,6 +37,20 @@ public class ReportController {
             @RequestParam LocalDate from,
             @RequestParam LocalDate to){
         return reports.ingresosPorGrupo(from, to);
+    }
+
+    @GetMapping("/by-rate/monthly")
+    public List<IncomeByRateMonthlyDTO> byRateMonthly(
+            @RequestParam LocalDate from,
+            @RequestParam LocalDate to){
+        return reports.ingresosPorTarifaMensual(from, to);
+    }
+
+    @GetMapping("/by-group/monthly")
+    public List<IncomeByGroupMonthlyDTO> byGroupMonthly(
+            @RequestParam LocalDate from,
+            @RequestParam LocalDate to){
+        return reports.ingresosPorGrupoMensual(from, to);
     }
 
     @GetMapping("/by-rate/csv")
