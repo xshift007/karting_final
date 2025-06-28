@@ -17,6 +17,7 @@ const WeeklyRack       = lazy(() => import('./pages/WeeklyRack'))
 const ReservationForm  = lazy(() => import('./pages/ReservationForm'))
 const ReservationsList = lazy(() => import('./pages/ReservationsList'))
 const ReportCharts     = lazy(() => import('./pages/ReportCharts'))
+const ReportTable      = lazy(() => import('./pages/ReportTable'))
 const ClientsCrud      = lazy(() => import('./pages/ClientsCrud'))
 const SessionsCrud     = lazy(() => import('./pages/SessionsCrud'))
 const PaymentPage      = lazy(() => import('./pages/PaymentPage'))
@@ -58,6 +59,7 @@ export default function App() {
             <Route path="/clients" element={<ClientsCrud />} />
             <Route path="/sessions" element={<SessionsCrud />} />
             <Route path="/reports" element={<ReportCharts />} />
+            <Route path="/reports/monthly" element={<ReportTable />} />
             <Route path="/help" element={<Help />} />
             {/* Ruta comodín para 404 */}
             <Route path="*" element={<NotFound />} />
