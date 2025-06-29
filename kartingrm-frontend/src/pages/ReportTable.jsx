@@ -6,6 +6,8 @@ import {
 import reportService from '../services/report.service';
 import dayjs from 'dayjs';
 
+const monthName = n => dayjs().month(n - 1).format('MMMM');
+
 export default function ReportTable() {
   const from = dayjs().startOf('year').format('YYYY-MM-DD');
   const to   = dayjs().endOf('year').format('YYYY-MM-DD');
@@ -22,14 +24,15 @@ export default function ReportTable() {
     setGroupData(r2.data);
   };
 
-  const months = Array.from(new Set(rateData.map(d => d.month)))
-    .sort((a,b)=> dayjs(a,'MMMM').month() - dayjs(b,'MMMM').month());
+  const monthNums = Array.from(new Set(rateData.map(d => d.month)))
+    .sort((a,b)=> a - b);
+  const months = monthNums.map(monthName);
 
   const buildMatrix = (data, keyField) => {
     const keys = Array.from(new Set(data.map(d=>d[keyField])));
     return keys.map(k => ({
       key: k,
-      counts: months.map(m => {
+      counts: monthNums.map(m => {
         const row = data.find(d => d.month===m && d[keyField]===k);
         return row?.total ?? 0;
       }),

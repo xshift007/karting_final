@@ -54,12 +54,12 @@ public class ReportService {
     public List<IncomeByRateMonthlyDTO> ingresosPorTarifaMensual(LocalDate from, LocalDate to) {
         return em.createQuery("""
       SELECT new com.kartingrm.dto.IncomeByRateMonthlyDTO(
-        FUNCTION('MONTHNAME', p.paymentDate),
-        r.rateType,
-        SUM(p.finalAmountInclVat))
+         MONTH(p.paymentDate),
+         r.rateType,
+         SUM(p.finalAmountInclVat))
       FROM Payment p JOIN p.reservation r
       WHERE p.paymentDate BETWEEN :f AND :t
-      GROUP BY FUNCTION('MONTHNAME', p.paymentDate), r.rateType
+      GROUP BY MONTH(p.paymentDate), r.rateType
       ORDER BY MONTH(p.paymentDate), r.rateType
       """, IncomeByRateMonthlyDTO.class)
                 .setParameter("f", from.atStartOfDay())
@@ -70,22 +70,22 @@ public class ReportService {
     public List<IncomeByGroupMonthlyDTO> ingresosPorGrupoMensual(LocalDate from, LocalDate to) {
         return em.createQuery("""
       SELECT new com.kartingrm.dto.IncomeByGroupMonthlyDTO(
-        FUNCTION('MONTHNAME', p.paymentDate),
-        CASE
-         WHEN r.participants BETWEEN 1 AND 2 THEN '1-2'
-         WHEN r.participants BETWEEN 3 AND 5 THEN '3-5'
-         WHEN r.participants BETWEEN 6 AND 10 THEN '6-10'
-         ELSE '11-15'
-        END,
-        SUM(p.finalAmountInclVat))
+         MONTH(p.paymentDate),
+         CASE
+           WHEN r.participants BETWEEN 1 AND 2 THEN '1-2'
+           WHEN r.participants BETWEEN 3 AND 5 THEN '3-5'
+           WHEN r.participants BETWEEN 6 AND 10 THEN '6-10'
+           ELSE '11+'
+         END,
+         SUM(p.finalAmountInclVat))
       FROM Payment p JOIN p.reservation r
       WHERE p.paymentDate BETWEEN :f AND :t
-      GROUP BY FUNCTION('MONTHNAME', p.paymentDate),
+      GROUP BY MONTH(p.paymentDate),
                CASE
                  WHEN r.participants BETWEEN 1 AND 2 THEN '1-2'
                  WHEN r.participants BETWEEN 3 AND 5 THEN '3-5'
                  WHEN r.participants BETWEEN 6 AND 10 THEN '6-10'
-                 ELSE '11-15'
+                 ELSE '11+'
                END
       ORDER BY MONTH(p.paymentDate)
       """, IncomeByGroupMonthlyDTO.class)
