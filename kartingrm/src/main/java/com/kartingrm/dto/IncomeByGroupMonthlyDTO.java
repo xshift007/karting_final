@@ -1,7 +1,7 @@
 package com.kartingrm.dto;
 
 public record IncomeByGroupMonthlyDTO(
-    String month,
-    String range,
+    Integer month,
+    String  range,
     Double total
 ) {}
