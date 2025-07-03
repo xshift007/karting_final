@@ -8,7 +8,8 @@ import sessionService from '../services/session.service'
 import { format, addDays, startOfWeek } from 'date-fns'
 import { useNavigate } from 'react-router-dom'
 
-const DOW = ['MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY','SUNDAY']
+const DOW_EN = ['MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY','SUNDAY']
+const DOW_ES = ['LUNES','MARTES','MIÉRCOLES','JUEVES','VIERNES','SÁBADO','DOMINGO']
 
 export default function WeeklyRack({ onCellClickAdmin }) {
   const [rack, setRack] = useState({})          // nunca null
@@ -75,7 +76,7 @@ export default function WeeklyRack({ onCellClickAdmin }) {
         <TableHead>
           <TableRow>
             <TableCell sx={{ fontWeight:'bold' }}>Hora</TableCell>
-            {DOW.map(d=>(
+            {DOW_ES.map(d=>(
               <TableCell key={d} sx={{ fontWeight:'bold', textAlign:'center' }}>
                 {d.slice(0,3)}
               </TableCell>
@@ -90,17 +91,17 @@ export default function WeeklyRack({ onCellClickAdmin }) {
               <TableRow key={range}>
                 <TableCell sx={{ fontWeight:500 }}>{range}</TableCell>
 
-                {DOW.map(d=>{
-                  const ses = rack?.[d]?.find(s=>s.startTime === start)
+                {DOW_EN.map((dayKey, index) => {
+                  const ses = rack?.[dayKey]?.find(s=>s.startTime === start)
 
-                  if (!ses) return <TableCell key={d+range}></TableCell>
+                  if (!ses) return <TableCell key={DOW_ES[index] + range}></TableCell>
 
                   const pct     = ses.participantsCount / ses.capacity
                   const isFull  = pct === 1
                   const label   = `${ses.participantsCount}/${ses.capacity}`
                                   
                   return (
-                    <TableCell key={d+range} sx={{ p:0 }}>
+                    <TableCell key={DOW_ES[index] + range} sx={{ p:0 }}>
                       <Tooltip title={`Reservados ${label}`}>
                         <Box
                           sx={{
