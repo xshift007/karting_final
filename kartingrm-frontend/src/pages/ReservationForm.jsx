@@ -134,6 +134,16 @@ export default function ReservationForm(){
   /* ---------- envío ---------- */
   const onSubmit = async data => {
     try{
+      /* ---- VALIDAR AFORO ---- */
+      const { sessionDate, startTime, endTime, participantsList } = data
+      const { data: week } = await sessionService.weekly(sessionDate, sessionDate)
+      const slot = Object.values(week).flat()
+                    .find(s => s.startTime===startTime && s.endTime===endTime)
+      if (slot && slot.participantsCount + participantsList.length > slot.capacity){
+        notify('La sesión ya está completa ❌','error')
+        return
+      }
+
       const res = await reservationService.create(data)
 
       notify('Reserva creada ✅','success')

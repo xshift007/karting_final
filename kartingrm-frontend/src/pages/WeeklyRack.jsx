@@ -97,7 +97,7 @@ export default function WeeklyRack({ onCellClickAdmin }) {
                   if (!ses) return <TableCell key={DOW_ES[index] + range}></TableCell>
 
                   const pct     = ses.participantsCount / ses.capacity
-                  const isFull  = pct === 1
+                  const isFull  = ses.participantsCount >= ses.capacity
                   const label   = `${ses.participantsCount}/${ses.capacity}`
                                   
                   return (
@@ -110,7 +110,9 @@ export default function WeeklyRack({ onCellClickAdmin }) {
                             py: .5,
                             cursor: isFull ? 'not-allowed':'pointer',
                             textAlign:'center',
-                            '&:hover': { opacity: isFull ? 1 : .8 }
+                            backgroundColor: isFull ? '#ffcdd2' : '#e8f5e9',
+                            opacity: isFull ? 0.6 : 1,
+                            '&:hover': { opacity: isFull ? 0.6 : .8 }
                           }}
                           onClick={()=>!isFull && handleCellClick(ses)}
                         >
