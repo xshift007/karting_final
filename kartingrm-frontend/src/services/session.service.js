@@ -1,7 +1,13 @@
 import http from '../http-common'
+import dayjs from 'dayjs'
+
+const fmt = d => dayjs(d).format('YYYY-MM-DD')
 
 const weekly = (from, to, cfg = {}) =>
-  http.get('/sessions/availability', { params:{ from, to }, ...cfg })
+  http.get('/sessions/availability', {
+    params:{ from: fmt(from), to: fmt(to) },
+    ...cfg
+  })
 
 const getAll = (cfg = {})            => http.get('/sessions', cfg)
 const create = (payload, cfg = {})   => http.post('/sessions', payload, cfg).then(r => r.data)

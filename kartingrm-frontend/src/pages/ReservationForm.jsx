@@ -5,7 +5,6 @@ import { useForm, useFieldArray, Controller } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
 import * as yup from 'yup'
 import dayjs from 'dayjs'
-import { nanoid } from 'nanoid'
 import { isWeekend } from 'date-fns'
 import {
   TextField, Button, Stack, Paper, Typography,
@@ -20,6 +19,9 @@ import clientService      from '../services/client.service'
 import sessionService     from '../services/session.service'
 import tariffSvc          from '../services/tariff.service'
 import { computePrice, buildTariffMaps } from '../helpers'
+
+const RATE_TYPES = ['LAP_10','LAP_15','LAP_20']
+const fmt = d => dayjs(d).format('YYYY-MM-DD')
 
 /* ---------------- esquema ---------------- */
 const schema = yup.object({
@@ -136,7 +138,7 @@ export default function ReservationForm(){
     try{
       /* ---- VALIDAR AFORO ---- */
       const { sessionDate, startTime, endTime, participantsList } = data
-      const { data: week } = await sessionService.weekly(sessionDate, sessionDate)
+      const { data: week } = await sessionService.weekly(fmt(sessionDate), fmt(sessionDate))
       const slot = Object.values(week).flat()
                     .find(s => s.startTime===startTime && s.endTime===endTime)
       if (slot && slot.participantsCount + participantsList.length > slot.capacity){
@@ -230,12 +232,12 @@ export default function ReservationForm(){
           <Controller name="rateType" control={control}
             render={({ field }) => (
               <TextField {...field} select label="Tipo de reserva"
+                value={field.value || ''}
                 error={!!errors.rateType}
                 helperText={errors.rateType?.message}>
-                {tariffs.map(t => (
-                  <MenuItem key={t.rate} value={t.rate}>
-                    {t.rate}&nbsp;–&nbsp;{t.minutes}&nbsp;min&nbsp;(${t.price})
-                  </MenuItem>
+                <MenuItem value="">Seleccione…</MenuItem>
+                {RATE_TYPES.map(r => (
+                  <MenuItem key={r} value={r}>{r}</MenuItem>
                 ))}
               </TextField>
             )}
