@@ -26,8 +26,17 @@ public class RestExceptionHandler {
 
     @ExceptionHandler(IllegalStateException.class)
     public ResponseEntity<ApiError> handleIllegalState(IllegalStateException ex){
-        return ResponseEntity.status(HttpStatus.CONFLICT)          // 409
-                .body(new ApiError("CONFLICT", ex.getMessage()));
+
+        /* Códigos específicos para la UI */
+        String code =
+                ex.getMessage().contains("Capacidad de la sesión")
+                        ? "CAPACITY_EXCEEDED"
+                : ex.getMessage().contains("Horario no disponible")
+                        ? "SESSION_OVERLAP"
+                : "CONFLICT";
+
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(new ApiError(code, ex.getMessage()));
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)

@@ -7,6 +7,7 @@ import com.kartingrm.entity.Participant;
 import com.kartingrm.entity.Reservation;
 import com.kartingrm.entity.Session;
 import com.kartingrm.repository.ReservationRepository;
+import com.kartingrm.repository.SessionRepository;
 import com.kartingrm.service.mail.MailService;
 import com.kartingrm.service.pricing.PricingService;
 import lombok.RequiredArgsConstructor;
@@ -22,9 +23,11 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ReservationService {
 
-    private final ReservationRepository repo;
+    private final ReservationRepository reservationRepo;
     private final ClientService clients;
-    private final SessionService sessionService;
+    private final SessionService sessionSvc;
+    /* NUEVO : necesitamos consultar superposiciones y aforo */
+    private final SessionRepository sessionRepo;
     private final PricingService pricing;
     private final MailService mail;
 
@@ -37,27 +40,37 @@ public class ReservationService {
     /* ---------------- crear ------------------------------------------------ */
     @Transactional
     public Reservation createReservation(ReservationRequestDTO dto) {
-        // 1) Creamos la sesión si no existe
-        Session s = sessionService.createIfAbsent(
+
+        /* ---------- 1) PREVENIR SOLAPES DE BLOQUES ---------- */
+        boolean overlap = sessionRepo.existsOverlap(
+                dto.sessionDate(),
+                dto.startTime(),
+                dto.endTime());
+        if (overlap)           // no permitas bloquear la pista dos veces
+            throw new IllegalStateException("Horario no disponible");
+
+        /* ---------- 2) OBTENER o CREAR SESIÓN EXACTA ---------- */
+        Session s = sessionSvc.createIfAbsent(
                 dto.sessionDate(),
                 dto.startTime(),
                 dto.endTime(),
                 defaultCapacity
         );
 
-        // 2) Validamos capacidad
-        int already = repo.participantsInSession(s.getId());
-        int requested = dto.participantsList().size();
-        if (already + requested > s.getCapacity())
+        /* ---------- 3) VERIFICAR CAPACIDAD RESTANTE ---------- */
+        int already   = reservationRepo.participantsInSession(s.getId());
+        int incoming  = dto.participantsList().size();
+        if (already + incoming > s.getCapacity()) {
             throw new IllegalStateException("Capacidad de la sesión superada");
+        }
 
         // 3) Generamos código único
         String code;
-        do { code = nextCode(); } while (repo.existsByReservationCode(code));
+        do { code = nextCode(); } while (reservationRepo.existsByReservationCode(code));
 
         // 4) Calculamos precios, guardamos reserva y enviamos mail
         var pr = pricing.calculate(dto);
-        Reservation r = repo.save(buildEntity(dto, s, pr, code));
+        Reservation r = reservationRepo.save(buildEntity(dto, s, pr, code));
         //TransactionSynchronizationManager.registerSynchronization(
         //        new TransactionSynchronization() {
         //            @Override public void afterCommit() {
@@ -78,11 +91,16 @@ public class ReservationService {
                 !existing.getSession().getEndTime().equals(dto.endTime()))
             throw new IllegalStateException("No se puede cambiar el bloque; cree otra reserva");
 
-        Session s = existing.getSession();
-        int already = repo.participantsInSession(s.getId()) - existing.getParticipants();
-        int requested = dto.participantsList().size();
-        if (already + requested > s.getCapacity())
+        /* ---------- Actualizar aforo ---------- */
+        int already =
+            reservationRepo.participantsInSession(existing.getSession().getId())
+            - existing.getParticipants();      // libera antiguos
+        if (already + dto.participantsList().size() > existing.getSession().getCapacity()) {
             throw new IllegalStateException("Capacidad de la sesión superada");
+        }
+
+        Session s = existing.getSession();
+        int requested = dto.participantsList().size();
 
         var pr = pricing.calculate(dto);
 
@@ -95,21 +113,21 @@ public class ReservationService {
         existing.getParticipantsList()
                 .addAll(toEntities(dto.participantsList(), existing));
 
-        return repo.save(existing);
+        return reservationRepo.save(existing);
     }
 
     /* ---------------- consultas ------------------------------------------- */
     public List<Reservation> findAll() {
-        return repo.findAll();
+        return reservationRepo.findAll();
     }
 
     public Reservation findById(Long id) {
-        return repo.findById(id)
+        return reservationRepo.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Reserva no existe"));
     }
 
     public void save(Reservation r) {
-        repo.save(r);
+        reservationRepo.save(r);
     }
 
     /* ---------------- helpers privados ------------------------------------ */

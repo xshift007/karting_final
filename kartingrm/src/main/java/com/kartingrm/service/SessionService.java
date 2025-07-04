@@ -26,7 +26,7 @@ public class SessionService {
 
     public Session create(Session s) {
         if (s.getId() == null &&
-                sessionRepo.existsOverlap(s.getSessionDate(), s.getStartTime(), s.getEndTime())) {
+            sessionRepo.existsOverlap(s.getSessionDate(), s.getStartTime(), s.getEndTime())) {
             throw new OverlapException("Ya existe una sesión solapada");
         }
         return sessionRepo.save(s);
