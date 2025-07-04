@@ -5,14 +5,16 @@ export const NotifyContext = createContext()
 export const useNotify = ()=> useContext(NotifyContext)
 
 export function NotifyProvider({children}){
-  const [snack,setSnack]=useState({open:false,msg:'',severity:'info'})
+  const [snack,setSnack]=useState(null)
   return (
-    <NotifyContext.Provider value={(msg,severity='info')=>setSnack({open:true,msg,severity})}>
+    <NotifyContext.Provider value={(msg,severity='info')=>setSnack({msg,severity})}>
       {children}
-      <Snackbar open={snack.open}
-                autoHideDuration={4000}
-                onClose={()=>setSnack(v=>({...v,open:false}))}>
-        <Alert severity={snack.severity}>{snack.msg}</Alert>
+      <Snackbar
+         key={snack?.msg}
+         open={!!snack}
+         autoHideDuration={4000}
+         onClose={()=>setSnack(null)}>
+        <Alert severity={snack?.severity}>{snack?.msg}</Alert>
       </Snackbar>
     </NotifyContext.Provider>
   )

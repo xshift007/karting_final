@@ -12,13 +12,19 @@ export default function WeeklyRackAdmin(){
   const open = (date,start,end) =>
     setDlg({open:true,date,start,end,cap:15})
 
-  const save = ()=>{
-    sessionSvc.create({
-      sessionDate:dlg.date,
-      startTime:dlg.start,
-      endTime:dlg.end,
-      capacity:dlg.cap
-    }).then(()=>{ setDlg({...dlg,open:false}); navigate(0) })
+  const save = async ()=>{
+    try{
+      await sessionSvc.create({
+        sessionDate:dlg.date,
+        startTime:dlg.start,
+        endTime:dlg.end,
+        capacity:dlg.cap
+      })
+      setDlg({...dlg,open:false});
+      navigate(0)
+    }catch(e){
+      /* Mensaje vendrá del interceptor – no cerrar diálogo */
+    }
   }
 
   return (
