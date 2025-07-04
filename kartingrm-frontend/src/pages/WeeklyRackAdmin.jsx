@@ -22,7 +22,7 @@ export default function WeeklyRackAdmin(){
       })
       setDlg({...dlg,open:false});
       navigate(0)
-    }catch(e){
+    }catch{
       /* Mensaje vendrá del interceptor – no cerrar diálogo */
     }
   }
