@@ -17,53 +17,68 @@ export function buildTariffMaps(tariffs = []) {
  * Cálculo idéntico al backend (descuentos secuenciales).
  *  · `prices` → mapa { rate : price }
  */
-export function computePrice ({
+export function computePrice({
   rateType,
   participants,
   birthdayCount = 0,
   visitsThisMonth = 0,
   prices = {}
 }) {
-  const base = prices[rateType] ?? 0          // ← dinámico
+  const base = prices[rateType] ?? 0
 
-  /* % grupo */
+  // Descuento por grupo
   const g =
     participants <= 2 ? 0 :
     participants <= 5 ? 10 :
-    participants <=10 ? 20 : 30
+    participants <= 10 ? 20 : 30
 
-  /* % frecuente */
+  // Descuento por cliente frecuente
   const f =
     visitsThisMonth >= 7 ? 30 :
     visitsThisMonth >= 5 ? 20 :
     visitsThisMonth >= 2 ? 10 : 0
 
-  /* cumpleañeros con 50 % */
+  // Cumpleañeros con descuento
   const winners =
     (birthdayCount === 1 && participants >= 3 && participants <= 5) ? 1 :
-    (birthdayCount >= 2  && participants >= 6 && participants <=15) ? Math.min(2,birthdayCount) :
+    (birthdayCount >= 2 && participants >= 6 && participants <= 15) ? Math.min(2, birthdayCount) :
     0
 
-  /* precios unitarios */
-  const afterGroup = base * (1 - g / 100)
-  const _ownerUnit = afterGroup * (1 - f / 100)
-  const unitReg    = afterGroup
-  const unitBirth  = afterGroup * 0.5
+  // Aplicar descuento de grupo al precio base
+  const priceAfterGroup = base * (1 - g / 100)
 
-  const final = Math.round(
-    unitReg   * (participants - winners) +
-    unitBirth * winners
-  )
+  // Precio para el titular (con descuento de cliente frecuente)
+  const ownerPrice = priceAfterGroup * (1 - f / 100)
 
-  const totalDisc = ((base * participants - final) * 100) /
-                    (base * participants)
+  // Precio para los otros participantes
+  const regularPrice = priceAfterGroup
+
+  let finalPrice = 0
+  let winnersLeft = winners
+  let ownerIsBirthday = false // Esto debería venir de los datos del formulario
+
+  if (participants > 0) {
+    let currentOwnerPrice = ownerPrice
+    if (ownerIsBirthday && winnersLeft > 0) {
+      currentOwnerPrice *= 0.5
+      winnersLeft--
+    }
+    finalPrice += currentOwnerPrice
+  }
+
+  const othersCount = participants - 1
+  const othersPrice = regularPrice * (othersCount - winnersLeft) + (regularPrice * 0.5 * winnersLeft)
+  finalPrice += othersPrice
+
+  const totalWithoutDiscount = base * participants
+  const totalDiscount = totalWithoutDiscount > 0 ? ((totalWithoutDiscount - finalPrice) * 100) / totalWithoutDiscount : 0
 
   return {
     base,
-    discGroup : g,
-    discFreq  : f,
-    discBirth : winners ? 50 : 0,
-    totalDisc,
-    final
+    discGroup: g,
+    discFreq: f,
+    discBirth: winners > 0 ? 50 : 0,
+    totalDisc: totalDiscount.toFixed(2),
+    final: Math.round(finalPrice)
   }
 }
