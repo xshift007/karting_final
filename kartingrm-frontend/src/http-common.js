@@ -9,23 +9,17 @@ const http = axios.create({
 });
 
 /* -------- INTERCEPTOR GLOBAL DE ERRORES -------- */
-http.interceptors.response.use(
-  res => res,
-  err => {
-    if (err.response?.data?.code) {
-      /* Mapea códigos → mensajes amigables */
-      const map = {
-        CAPACITY_EXCEEDED : 'La sesión ya está completa ❌',
-        SESSION_OVERLAP   : 'Ese horario ya está ocupado ⏰',
-        DUPLICATE_CODE    : 'Código de reserva duplicado',
-        BAD_REQUEST       : err.response.data.message
-      };
-      const msg = map[err.response.data.code] || err.response.data.message;
-      /* Lanza evento global capturado por ErrorBoundary */
-      window.dispatchEvent(new CustomEvent('httpError',{ detail: msg }));
-    }
-    return Promise.reject(err);
-  }
-);
+http.interceptors.response.use(null, err => {
+  const { code, message } = err.response?.data ?? {};
+  const evt = new CustomEvent('httpError', {
+    detail:
+      code === 'CAPACITY_EXCEEDED' ? 'Capacidad de la sesión superada'
+    : code === 'SESSION_OVERLAP'   ? 'El horario seleccionado no está disponible'
+    : code === 'DUPLICATE_CODE'    ? 'El código ya existe'
+    : message || 'Error desconocido'
+  });
+  window.dispatchEvent(evt);
+  return Promise.reject(err);
+});
 
 export default http;
