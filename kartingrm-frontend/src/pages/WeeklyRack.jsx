@@ -5,8 +5,8 @@ import {
   Paper, Typography, Tooltip, Box, Alert, CircularProgress
 } from '@mui/material'
 import { useQuery } from '@tanstack/react-query'
-import sessionService from '../services/session.service'
-import { format, addDays, startOfWeek } from 'date-fns'
+import dayjs from 'dayjs'
+import sessionSvc from '../services/session.service'
 import { useNavigate } from 'react-router-dom'
 
 const DOW_EN = ['MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY','SUNDAY']
@@ -15,14 +15,18 @@ const DOW_ES = ['LUNES','MARTES','MIÉRCOLES','JUEVES','VIERNES','SÁBADO','DOMI
 export default function WeeklyRack({ onCellClickAdmin }) {
   const navigate = useNavigate()
 
-  const monday = startOfWeek(new Date(), { weekStartsOn:1 })
-  const from   = format(monday,'yyyy-MM-dd')
-  const to     = format(addDays(monday,6),'yyyy-MM-dd')
+  const monday = dayjs().startOf('week').add(1, 'day')
+  const from   = monday.format('YYYY-MM-DD')
+  const to     = monday.add(6, 'day').format('YYYY-MM-DD')
 
   const fetchRack = () =>
-    sessionService.weekly(from, to).then(r => r.data ?? {})
+    sessionSvc.weekly(from, to).then(r => r.data ?? {})
 
-  const { data: rack = {}, isLoading } = useQuery(['rack', from, to], fetchRack)
+  const { data: rack = {}, isPending, refetch: _refetch } = useQuery({
+    queryKey: ['rack', from, to],
+    queryFn: fetchRack,
+    staleTime: 5 * 60_000
+  })
 
   /* ---------- todos los rangos HH:MM-HH:MM existentes ---------- */
   const slots = useMemo(() => {
@@ -53,7 +57,7 @@ export default function WeeklyRack({ onCellClickAdmin }) {
   }
 
   /* ---------- JSX ---------- */
-  if (isLoading) {
+  if (isPending) {
     return <CircularProgress sx={{ display:'block', mx:'auto', my:4 }}/>
   }
 
