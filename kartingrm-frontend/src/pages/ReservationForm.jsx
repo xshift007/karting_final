@@ -27,7 +27,15 @@ const fmt = d => dayjs(d).format('YYYY-MM-DD')
 const schema = yup.object({
   clientId        : yup.number().required('Cliente obligatorio'),
   sessionDate     : yup.date().required('Fecha obligatoria'),
-  startTime       : yup.string().required('Hora inicio obligatoria'),
+  startTime       : yup.string()
+                        .required('Hora inicio obligatoria')
+                        .test('is-in-future', 'La hora de inicio no puede ser en el pasado', function(value){
+                          const { sessionDate } = this.parent
+                          if (dayjs(sessionDate).isSame(dayjs(), 'day')) {
+                            return dayjs(value, 'HH:mm').isAfter(dayjs())
+                          }
+                          return true
+                        }),
   endTime         : yup.string()
                         .required('Hora fin obligatoria')
                         .test('is-after','Fin debe ser posterior',

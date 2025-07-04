@@ -3,6 +3,7 @@ package com.kartingrm.dto;
 import com.kartingrm.entity.RateType;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
+import jakarta.validation.constraints.AssertTrue;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -29,6 +30,14 @@ public record ReservationRequestDTO(
 ) {
     @AssertTrue(message = "La hora de término debe ser posterior a la de inicio")
     public boolean isTimeOrder(){ return endTime.isAfter(startTime); }
+
+    @AssertTrue(message = "La hora de inicio no puede ser en el pasado")
+    public boolean isTimeInFuture(){
+        if (sessionDate.isEqual(LocalDate.now())) {
+            return startTime.isAfter(LocalTime.now());
+        }
+        return true;
+    }
 
     /* sub‑record */
     public record ParticipantDTO(
