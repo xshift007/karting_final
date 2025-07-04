@@ -1,9 +1,10 @@
 // src/pages/WeeklyRack.jsx
-import React, { useEffect, useState, useMemo } from 'react'
+import React, { useMemo } from 'react'
 import {
   Table, TableHead, TableBody, TableRow, TableCell,
-  Paper, Typography, Tooltip, Box, Alert
+  Paper, Typography, Tooltip, Box, Alert, CircularProgress
 } from '@mui/material'
+import { useQuery } from '@tanstack/react-query'
 import sessionService from '../services/session.service'
 import { format, addDays, startOfWeek } from 'date-fns'
 import { useNavigate } from 'react-router-dom'
@@ -12,25 +13,16 @@ const DOW_EN = ['MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY','S
 const DOW_ES = ['LUNES','MARTES','MIÉRCOLES','JUEVES','VIERNES','SÁBADO','DOMINGO']
 
 export default function WeeklyRack({ onCellClickAdmin }) {
-  const [rack, setRack] = useState({})          // nunca null
   const navigate = useNavigate()
 
   const monday = startOfWeek(new Date(), { weekStartsOn:1 })
   const from   = format(monday,'yyyy-MM-dd')
   const to     = format(addDays(monday,6),'yyyy-MM-dd')
 
-  /* ---------- carga con AbortController ---------- */
-  useEffect(() => {
-    const controller = new AbortController()
+  const fetchRack = () =>
+    sessionService.weekly(from, to).then(r => r.data ?? {})
 
-    sessionService.weekly(from, to, { signal: controller.signal })
-      .then(r => setRack(r.data ?? {}))        // <= fallback seguro
-      .catch(err => {
-        if (!controller.signal.aborted) console.error(err)
-      })
-
-    return () => controller.abort()
-  }, [from, to])
+  const { data: rack = {}, isLoading } = useQuery(['rack', from, to], fetchRack)
 
   /* ---------- todos los rangos HH:MM-HH:MM existentes ---------- */
   const slots = useMemo(() => {
@@ -61,6 +53,10 @@ export default function WeeklyRack({ onCellClickAdmin }) {
   }
 
   /* ---------- JSX ---------- */
+  if (isLoading) {
+    return <CircularProgress sx={{ display:'block', mx:'auto', my:4 }}/>
+  }
+
   return (
     <Paper sx={{ p:2, overflowX:'auto' }}>
       <Alert severity="info" sx={{ mb:2 }}>
