@@ -12,23 +12,19 @@ import { useHotkeys } from 'react-hotkeys-hook'
 // agrupa en uno o varios ficheros finales que se envían al navegador
 
 
-const Home             = lazy(() => import('./pages/Home'))
 const WeeklyRack       = lazy(() => import('./pages/WeeklyRack'))
 const ReservationForm  = lazy(() => import('./pages/ReservationForm'))
 const ReservationsList = lazy(() => import('./pages/ReservationsList'))
 const ReportCharts     = lazy(() => import('./pages/ReportCharts'))
 const ReportTable      = lazy(() => import('./pages/ReportTable'))
 const ClientsCrud      = lazy(() => import('./pages/ClientsCrud'))
-const SessionsCrud     = lazy(() => import('./pages/SessionsCrud'))
 const PaymentPage      = lazy(() => import('./pages/PaymentPage'))
 const NotFound         = lazy(() => import('./pages/NotFound'))
 const TariffsCrud      = lazy(() => import('./pages/TariffsCrud'))
-const WeeklyRackAdmin  = lazy(() => import('./pages/WeeklyRackAdmin'))
 const Help            = lazy(() => import('./pages/Help'))
 
 export default function App() {
   const navigate = useNavigate()
-  useHotkeys('g>h', () => navigate('/home'))
   useHotkeys('g>r', () => navigate('/reservations'))
   return (
     <>
@@ -49,22 +45,19 @@ export default function App() {
         }>
           {/* Definición de rutas de la aplicación */}
           <Routes>
-            {/* Redirige la raíz hacia /home */}
-            <Route path="/" element={<Navigate to="/home" replace />} />
-            <Route path="/home" element={<Home />} />
+            {/* Redirige la raíz hacia /rack */}
+            <Route path="/" element={<Navigate to="/rack" replace />} />
             <Route path="/rack" element={<WeeklyRack />} />
             <Route path="/reservations/new" element={<ReservationForm />} />
             <Route path="/reservations" element={<ReservationsList />} />
             <Route path="/payments/:reservationId" element={<PaymentPage />} />
             <Route path="/clients" element={<ClientsCrud />} />
-            <Route path="/sessions" element={<SessionsCrud />} />
             <Route path="/reports" element={<ReportCharts />} />
             <Route path="/reports/monthly" element={<ReportTable />} />
             <Route path="/help" element={<Help />} />
             {/* Ruta comodín para 404 */}
             <Route path="*" element={<NotFound />} />
             <Route path="/tariffs" element={<TariffsCrud/>}/>
-            <Route path="/rack-admin" element={<WeeklyRackAdmin/>}/>
           </Routes>
         </Suspense>
       </Container>
