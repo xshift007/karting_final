@@ -29,12 +29,21 @@ const schema = yup.object({
   sessionDate     : yup.date().required('Fecha obligatoria'),
   startTime       : yup.string()
                         .required('Hora inicio obligatoria')
-                        .test('is-in-future', 'La hora de inicio no puede ser en el pasado', function(value){
-                          const { sessionDate } = this.parent
+                        .test('is-in-future', 'La hora de inicio no puede ser en el pasado', function(value) {
+                          const { sessionDate } = this.parent;
+                          // Solo aplica la validación cuando la reserva es para hoy
                           if (dayjs(sessionDate).isSame(dayjs(), 'day')) {
-                            return dayjs(value, 'HH:mm').isAfter(dayjs())
+                            if (!value) {
+                              return true; // dejar que la validación 'required' actúye
+                            }
+                            // Construir la fecha y hora completas para compararlas con "ahora"
+                            const now = dayjs();
+                            const [hours, minutes] = value.split(':');
+                            const selectedDateTime = dayjs(sessionDate).hour(hours).minute(minutes);
+
+                            return selectedDateTime.isAfter(now);
                           }
-                          return true
+                          return true;
                         }),
   endTime         : yup.string()
                         .required('Hora fin obligatoria')
