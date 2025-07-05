@@ -203,13 +203,8 @@ export default function ReservationForm({ edit = false }){
       notify(`Reserva ${edit ? 'actualizada' : 'creada'} ✅`,'success')
 
       navigate(`/payments/${res.id}`,{ replace:true })
-    }catch(e){
-      if(e.response?.status===409){
-        notify('El código ya existe. Intenta de nuevo.','error')
-      }else{
-        setToast({open:true,msg:e.response?.data?.message||e.message,severity:'error'})
-        notify(e.response?.data?.message||e.message,'error')
-      }
+    }catch{
+      // No es necesario hacer nada aquí, el interceptor global se encarga.
     }
   }
 
