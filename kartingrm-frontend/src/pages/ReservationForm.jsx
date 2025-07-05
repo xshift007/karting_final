@@ -62,6 +62,15 @@ const schema = yup.object({
                         .required('Hora fin obligatoria')
                         .test('is-after','Fin debe ser posterior',
                               function (value){ return !value || value > this.parent.startTime }),
+                        .test('is-before-closing', 'La hora de finalización no puede ser después de las 22:00', function(value) {
+                            if (!value) {
+                                return true;
+                            }
+                            const [hours, minutes] = value.split(":").map(Number);
+                            const selectedTime = hours * 60 + minutes;
+                            // Permite hasta las 22:00 inclusive
+                            return selectedTime <= 22 * 60;
+                        })
   participantsList: yup.array().of(
                       yup.object({
                         fullName: yup.string().required('Nombre obligatorio'),

@@ -39,6 +39,11 @@ public record ReservationRequestDTO(
         return true;
     }
 
+    @AssertTrue(message = "La hora de finalización no puede ser después de las 22:00")
+    public boolean isEndTimeValid() {
+        return !endTime.isAfter(LocalTime.of(22, 0));
+    }
+
     /* sub‑record */
     public record ParticipantDTO(
             @NotBlank String fullName,
