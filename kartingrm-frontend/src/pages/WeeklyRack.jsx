@@ -1,10 +1,10 @@
 // src/pages/WeeklyRack.jsx
-import React, { useEffect, useMemo } from 'react'
+import React, { useMemo } from 'react'
 import {
   Table, TableHead, TableBody, TableRow, TableCell,
   Paper, Typography, Tooltip, Box, Alert, CircularProgress, Stack
 } from '@mui/material'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import dayjs from 'dayjs'
 import sessionSvc from '../services/session.service'
 import { useNavigate } from 'react-router-dom'
@@ -14,12 +14,14 @@ const DOW_ES = ['LUNES','MARTES','MIÉRCOLES','JUEVES','VIERNES','SÁBADO','DOMI
 
 const Legend = () => (
   <Stack direction="row" spacing={2} sx={{ mb: 1 }}>
-    {['Libre', 'Parcial', 'Llena'].map((l, i) => (
-      <Stack key={l} direction="row" alignItems="center" spacing={1}>
-        <Box sx={{ width: 16, height: 16, bgcolor: ['#e8f5e9', 'warning.main', '#ffcdd2'][i], borderRadius: 1 }} />
-        <Typography variant="caption">{l}</Typography>
-      </Stack>
-    ))}
+    <Stack direction="row" alignItems="center" spacing={1}>
+      <Box sx={{ width: 16, height: 16, bgcolor: 'success.light', borderRadius: 1 }} />
+      <Typography variant="caption">Disponible</Typography>
+    </Stack>
+    <Stack direction="row" alignItems="center" spacing={1}>
+      <Box sx={{ width: 16, height: 16, bgcolor: 'error.main', borderRadius: 1 }} />
+      <Typography variant="caption">Ocupado</Typography>
+    </Stack>
   </Stack>
 )
 
@@ -33,22 +35,12 @@ export default function WeeklyRack({ onCellClickAdmin }) {
   const fetchRack = () =>
     sessionSvc.weekly(from, to).then(r => r.data ?? {})
 
-  const { data: rack = {}, isPending } = useQuery({
+  const { data: rack = {}, isPending, refetch: _refetch } = useQuery({
     queryKey: ['rack', from, to],
     queryFn: fetchRack,
     staleTime: 5 * 60_000
   })
 
-  const queryClient = useQueryClient()
-
-  useEffect(() => {
-    const eventSource = new EventSource('/api/sessions/stream')
-    eventSource.onmessage = (event) => {
-      const newRackData = JSON.parse(event.data)
-      queryClient.setQueryData(['rack', from, to], newRackData)
-    }
-    return () => eventSource.close()
-  }, [from, to, queryClient])
 
   /* ---------- todos los rangos HH:MM-HH:MM existentes ---------- */
   const slots = useMemo(() => {
@@ -61,13 +53,6 @@ export default function WeeklyRack({ onCellClickAdmin }) {
       )
     ).sort((a,b)=>a.localeCompare(b))
   }, [rack])
-
-  /* ---------- helpers UI ---------- */
-  const cellColor = pct => (
-    pct === 1        ? 'error.main'    // rojo full
-    : pct >= 0.7     ? 'warning.main'  // naranja casi lleno
-    : 'success.main'                   // verde disponible
-  )
 
   const handleCellClick = (ses) => {
     if (!ses) return
@@ -85,6 +70,7 @@ export default function WeeklyRack({ onCellClickAdmin }) {
 
   return (
     <Paper sx={{ p:2, overflowX:'auto' }}>
+      <Legend />
       <Alert severity="info" sx={{ mb:2 }}>
         Horario de Atención:
         <strong> Lunes–Viernes 14:00–22:00</strong> |
@@ -93,7 +79,6 @@ export default function WeeklyRack({ onCellClickAdmin }) {
       <Typography variant="h5" gutterBottom>
         Disponibilidad (semana {from})
       </Typography>
-      <Legend />
 
       <Table size="small">
         <TableHead>
@@ -111,33 +96,33 @@ export default function WeeklyRack({ onCellClickAdmin }) {
           {slots.map(range => {
             const [start,_end] = range.split('-')
             return (
-              <TableRow key={range}>
-                <TableCell sx={{ fontWeight:500 }}>{range}</TableCell>
+              <TableRow key={range} sx={{ backgroundColor: 'success.light' }}>
+                <TableCell sx={{ fontWeight: 500 }}>{range}</TableCell>
 
                 {DOW_EN.map((dayKey, index) => {
                   const ses = rack?.[dayKey]?.find(s=>s.startTime === start)
 
                   if (!ses) return <TableCell key={DOW_ES[index] + range}></TableCell>
 
-                  const pct     = ses.participantsCount / ses.capacity
-                  const isFull  = ses.participantsCount >= ses.capacity
+                  const isOccupied = ses.participantsCount > 0;
                   const label   = `${ses.participantsCount}/${ses.capacity}`
                                   
                   return (
                     <TableCell key={DOW_ES[index] + range} sx={{ p:0 }}>
-                      <Tooltip title={`Reservados ${label}`}>
+                      <Tooltip title={isOccupied ? `Ocupado ${label}` : `Disponible ${label}`}>
                         <Box
                           sx={{
-                            bgcolor: cellColor(pct),
-                            color:  '#fff',
+                            bgcolor: isOccupied ? 'error.main' : 'transparent',
+                            color:  isOccupied ? '#fff' : 'inherit',
                             py: .5,
-                            cursor: isFull ? 'not-allowed':'pointer',
+                            cursor: isOccupied ? 'not-allowed':'pointer',
                             textAlign:'center',
-                            backgroundColor: isFull ? '#ffcdd2' : '#e8f5e9',
-                            opacity: isFull ? 0.6 : 1,
-                            '&:hover': { opacity: isFull ? 0.6 : .8 }
+                            '&:hover': { 
+                                opacity: isOccupied ? 1 : 0.8,
+                                backgroundColor: isOccupied ? 'error.main' : 'success.dark'
+                            }
                           }}
-                          onClick={()=>!isFull && handleCellClick(ses)}
+                          onClick={()=>!isOccupied && handleCellClick(ses)}
                         >
                           {label}
                         </Box>
