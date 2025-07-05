@@ -10,6 +10,10 @@ const http = axios.create({
 
 /* -------- INTERCEPTOR GLOBAL DE ERRORES -------- */
 http.interceptors.response.use(null, err => {
+  // 0️⃣  Ignorar cancelaciones explícitas
+  if (err.code === 'ERR_CANCELED' || err.message === 'canceled') {
+    return Promise.reject(err);       //  ←  sin lanzar evento
+  }
   // 1. Información devuelta por el backend (cuando existe)
   const code    = err.response?.data?.code;
   const backend = err.response?.data?.message;
