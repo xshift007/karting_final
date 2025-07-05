@@ -164,7 +164,9 @@ export default function ReservationForm({ edit = false }){
 
   /* 4) cargar tarifas una vez */
   useEffect(()=>{
-    tariffSvc.list().then(setTariffs)
+    tariffSvc.list()
+      .then(setTariffs)
+      .catch(err => console.error("Error al cargar tarifas:", err))
   },[])
 
   /* 4) Revalidar startTime cuando sessionDate cambia */
@@ -310,7 +312,7 @@ export default function ReservationForm({ edit = false }){
 
               <Controller name={`participantsList.${idx}.fullName`} control={control}
                 render={({ field }) => (
-                  <TextField {...field} label="Nombre"
+                  <TextField {...field} id={field.name} label="Nombre"
                     error={!!errors.participantsList?.[idx]?.fullName}
                     helperText={errors.participantsList?.[idx]?.fullName?.message}/>
                 )}
@@ -318,7 +320,7 @@ export default function ReservationForm({ edit = false }){
 
               <Controller name={`participantsList.${idx}.email`} control={control}
                 render={({ field }) => (
-                  <TextField {...field} label="Email"
+                  <TextField {...field} id={field.name} label="Email"
                     error={!!errors.participantsList?.[idx]?.email}
                     helperText={errors.participantsList?.[idx]?.email?.message}/>
                 )}
@@ -326,7 +328,7 @@ export default function ReservationForm({ edit = false }){
 
               <Controller name={`participantsList.${idx}.birthday`} control={control}
                 render={({ field }) => (
-                  <TextField {...field} select label="Cumple">
+                  <TextField {...field} id={field.name} select label="Cumple">
                     <MenuItem value={false}>No</MenuItem>
                     <MenuItem value={true}>Sí</MenuItem>
                   </TextField>
