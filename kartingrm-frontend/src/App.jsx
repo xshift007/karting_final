@@ -20,7 +20,6 @@ const ReportTable      = lazy(() => import('./pages/ReportTable'))
 const ClientsCrud      = lazy(() => import('./pages/ClientsCrud'))
 const PaymentPage      = lazy(() => import('./pages/PaymentPage'))
 const NotFound         = lazy(() => import('./pages/NotFound'))
-const TariffsCrud      = lazy(() => import('./pages/TariffsCrud'))
 const Help            = lazy(() => import('./pages/Help'))
 
 export default function App() {
@@ -58,7 +57,6 @@ export default function App() {
             <Route path="/help" element={<Help />} />
             {/* Ruta comodín para 404 */}
             <Route path="*" element={<NotFound />} />
-            <Route path="/tariffs" element={<TariffsCrud/>}/>
           </Routes>
         </Suspense>
       </Container>

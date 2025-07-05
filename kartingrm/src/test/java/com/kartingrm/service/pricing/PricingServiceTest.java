@@ -2,9 +2,8 @@ package com.kartingrm.service.pricing;
 
 import com.kartingrm.dto.ReservationRequestDTO;
 import com.kartingrm.dto.ReservationRequestDTO.ParticipantDTO;
-import com.kartingrm.entity.RateType;
-import com.kartingrm.entity.Client;
-import com.kartingrm.repository.TariffConfigRepository;
+import com.kartingrm.entity.*;
+import com.kartingrm.repository.RatePricingRepository;
 import com.kartingrm.service.HolidayService;
 import com.kartingrm.service.ClientService;
 import org.junit.jupiter.api.BeforeEach;
@@ -20,7 +19,7 @@ import static org.mockito.Mockito.*;
 
 class PricingServiceTest {
 
-    @Mock TariffConfigRepository repo;
+    @Mock RatePricingRepository repo;
     @Mock HolidayService holidaySvc;
     @Mock ClientService clientSvc;
     @InjectMocks TariffService tariffService;
@@ -35,16 +34,16 @@ class PricingServiceTest {
     @Test
     void calculate_weekday_noDiscounts() {
         // dada una tarifa base de 1000, 1 participante, sin feriado/fin de semana
-        var cfg = new com.kartingrm.entity.TariffConfig(RateType.LAP_10, 1000, 30);
+        var cfg = new RatePricing(new RatePricingId(RateType.LAP_10, DayCategory.WEEKDAY),1000,30);
         when(holidaySvc.isHoliday(any())).thenReturn(false);
-        when(repo.findById(RateType.LAP_10)).thenReturn(java.util.Optional.of(cfg));
+        when(repo.findById(cfg.getId())).thenReturn(java.util.Optional.of(cfg));
         // cliente con 0 visitas
         var client = new Client(1L,"Foo","f@f",null,null,0,null);
         when(clientSvc.get(1L)).thenReturn(client);
         when(clientSvc.getTotalVisitsThisMonth(client)).thenReturn(0);
 
         var participants = List.of(new ParticipantDTO("X","x@x",false));
-        var req = new ReservationRequestDTO("C",1L, LocalDate.now(), LocalTime.NOON, LocalTime.NOON.plusMinutes(30), participants, RateType.LAP_10);
+        var req = new ReservationRequestDTO("C",1L, LocalDate.now(), LocalTime.NOON, LocalTime.NOON.plusMinutes(30), participants, RateType.LAP_10, false);
 
         var res = pricingSvc.calculate(req);
 
@@ -59,10 +58,8 @@ class PricingServiceTest {
     void calculate_weekend_groupAndFreq() {
         // simula un fin de semana con 3 participantes y 5 visitas
         when(holidaySvc.isHoliday(any())).thenReturn(false);
-        var baseCfg = new com.kartingrm.entity.TariffConfig(RateType.LAP_15, 2000, 35);
-        var weekendCfg = new com.kartingrm.entity.TariffConfig(RateType.WEEKEND, 3000, 35);
-        when(repo.findById(RateType.LAP_15)).thenReturn(java.util.Optional.of(baseCfg));
-        when(repo.findById(RateType.WEEKEND)).thenReturn(java.util.Optional.of(weekendCfg));
+        var weekendCfg = new RatePricing(new RatePricingId(RateType.LAP_15, DayCategory.WEEKEND),3000,35);
+        when(repo.findById(weekendCfg.getId())).thenReturn(java.util.Optional.of(weekendCfg));
         var client = new Client(1L,"Foo","f@f",null,null,0,null);
         when(clientSvc.get(1L)).thenReturn(client);
         when(clientSvc.getTotalVisitsThisMonth(client)).thenReturn(5);
@@ -72,7 +69,7 @@ class PricingServiceTest {
                 new ParticipantDTO("B","b@b",false),
                 new ParticipantDTO("C","c@c",false)
         );
-        var req = new ReservationRequestDTO("R",1L, LocalDate.of(2025,5,17), LocalTime.NOON, LocalTime.NOON.plusMinutes(35), parts, RateType.LAP_15);
+        var req = new ReservationRequestDTO("R",1L, LocalDate.of(2025,5,17), LocalTime.NOON, LocalTime.NOON.plusMinutes(35), parts, RateType.LAP_15, false);
 
         var out = pricingSvc.calculate(req);
         // group=10%, freq=20%, finalPrice = 3000*(1-0.1)*(1-0.2)*3 ≈?

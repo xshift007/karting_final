@@ -1,40 +1,36 @@
 package com.kartingrm.service.pricing;
 
-import com.kartingrm.entity.RateType;
-import com.kartingrm.entity.TariffConfig;
-import com.kartingrm.repository.TariffConfigRepository;
+import com.kartingrm.entity.*;
+import com.kartingrm.repository.RatePricingRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 
-/**
- * Obtiene la tarifa aplicable considerando fin de semana o feriado.
- * El precio se sobre-escribe por el especial, pero conserva
- * los minutos correspondientes a la tarifa solicitada.
- */
-@Service
-@RequiredArgsConstructor
+@Service @RequiredArgsConstructor
 public class TariffService {
 
-    private final TariffConfigRepository repo;
+    private final RatePricingRepository repo;
     private final com.kartingrm.service.HolidayService holidays;
 
-    public TariffConfig forDate(LocalDate date, RateType requested){
+    private DayCategory categorize(LocalDate d, boolean overrideHoliday){
+        if (overrideHoliday || holidays.isHoliday(d))             return DayCategory.HOLIDAY;
+        if (d.getDayOfWeek()==DayOfWeek.SATURDAY ||
+            d.getDayOfWeek()==DayOfWeek.SUNDAY)                   return DayCategory.WEEKEND;
+        return DayCategory.WEEKDAY;
+    }
 
-        boolean weekend = date.getDayOfWeek() == DayOfWeek.SATURDAY
-                || date.getDayOfWeek() == DayOfWeek.SUNDAY;
-        boolean holiday = holidays.isHoliday(date);
+    /** API principal */
+    public RatePricing forDate(LocalDate date, RateType rate, boolean override){
+        DayCategory c = categorize(date, override);
+        return repo.findById(new RatePricingId(rate, c))
+                   .orElseThrow(() ->
+                       new IllegalStateException("Falta precio para "+rate+" / "+c));
+    }
 
-        if (!weekend && !holiday)
-            return repo.findById(requested).orElseThrow();
-
-        RateType special = holiday ? RateType.HOLIDAY : RateType.WEEKEND;
-        TariffConfig base       = repo.findById(requested).orElseThrow();
-        TariffConfig specialCfg = repo.findById(special).orElseThrow();
-
-        /* mismo rate - distinto precio */
-        return new TariffConfig(requested, specialCfg.getPrice(), base.getMinutes());
+    /** Compat. con tests antiguos */
+    public RatePricing forDate(LocalDate d, RateType r){
+        return forDate(d, r, false);
     }
 }

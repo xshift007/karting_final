@@ -6,7 +6,7 @@
 export function buildTariffMaps(tariffs = []) {
   const priceMap = {}
   const durMap   = {}
-  tariffs.forEach(t => {
+  tariffs.filter(t => t.category === 'WEEKDAY').forEach(t => {
     priceMap[t.rate] = t.price
     durMap[t.rate]   = t.minutes
   })

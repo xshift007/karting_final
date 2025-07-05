@@ -8,7 +8,7 @@ import dayjs from 'dayjs'
 import {
   TextField, Button, Stack, Paper, Typography,
   MenuItem, IconButton, Alert, Snackbar,
-  CircularProgress
+  CircularProgress, Switch, FormControlLabel
 } from '@mui/material'
 import { AddCircle, RemoveCircle } from '@mui/icons-material'
 import { useNotify } from '../hooks/useNotify'
@@ -93,6 +93,7 @@ export default function ReservationForm({ edit = false }){
   /* ------------ estado auxiliar ------------ */
   const [clients,  setClients]  = useState([])
   const [tariffs,  setTariffs ] = useState([])       // ← tarifas BD
+  const [holidayOverride,setHolidayOverride] = useState(false)
 
   /* ------------ form principal --------------- */
   const {
@@ -198,8 +199,12 @@ export default function ReservationForm({ edit = false }){
         return
       }
 
-      const promise = edit ? reservationService.update(id, data)
-                           : reservationService.create(data)
+      const payload = {
+        ...data,
+        holidayOverride
+      }
+      const promise = edit ? reservationService.update(id, payload)
+                           : reservationService.create(payload)
       const res = await promise
 
       notify(`Reserva ${edit ? 'actualizada' : 'creada'} ✅`,'success')
@@ -303,6 +308,11 @@ export default function ReservationForm({ edit = false }){
                 helperText={errors.endTime?.message}/>
             )}
           />
+
+          <FormControlLabel control={
+             <Switch checked={holidayOverride}
+                     onChange={e=>setHolidayOverride(e.target.checked)} />
+          } label="Tratar como feriado" />
 
           {/* ---------- participantes ---------- */}
           <Typography variant="h6">Participantes</Typography>

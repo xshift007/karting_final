@@ -28,7 +28,8 @@ public record ReservationRequestDTO(
         @Size(min = 1, max = 15, message = "Máximo 15 participantes")
         List<@Valid ParticipantDTO> participantsList,
 
-        @NotNull RateType rateType
+        @NotNull RateType rateType,
+        boolean holidayOverride      // ← NUEVO (default = false)
 ) {
     @AssertTrue(message = "La hora de término debe ser posterior a la de inicio")
     public boolean isTimeOrder(){ return endTime.isAfter(startTime); }

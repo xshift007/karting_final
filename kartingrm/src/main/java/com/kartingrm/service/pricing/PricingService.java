@@ -2,7 +2,7 @@ package com.kartingrm.service.pricing;
 
 import com.kartingrm.dto.ReservationRequestDTO;
 import com.kartingrm.entity.Client;
-import com.kartingrm.entity.TariffConfig;
+import com.kartingrm.entity.RatePricing;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -23,7 +23,8 @@ public class PricingService {
     public PricingResult calculate(ReservationRequestDTO dto) {
 
         /* ---------- datos base ---------- */
-        TariffConfig cfg      = tariff.forDate(dto.sessionDate(), dto.rateType());
+        RatePricing cfg = tariff.forDate(dto.sessionDate(), dto.rateType(),
+                                         dto.holidayOverride());
         double       baseUnit = cfg.getPrice();
         int          minutes  = cfg.getMinutes();
         int          people   = dto.participantsList().size();

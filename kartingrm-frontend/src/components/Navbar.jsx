@@ -18,7 +18,6 @@ export default function Navbar(){
           <Button color="inherit" component={RouterLink} to="/reports">Reportes</Button>
           <Button color="inherit" component={RouterLink} to="/reports/monthly">Reporte Mensual</Button>
           <Button color="inherit" component={RouterLink} to="/clients">Clientes</Button>
-          <Button color="inherit" component={RouterLink} to="/tariffs">Tarifas</Button>
           <Button color="inherit" component={RouterLink} to="/help">Ayuda</Button>
 
         </Stack>
