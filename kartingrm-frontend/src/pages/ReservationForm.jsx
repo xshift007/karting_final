@@ -5,7 +5,6 @@ import { useForm, useFieldArray, Controller } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
 import * as yup from 'yup'
 import dayjs from 'dayjs'
-import { isWeekend } from 'date-fns'
 import {
   TextField, Button, Stack, Paper, Typography,
   MenuItem, IconButton, Alert, Snackbar,
@@ -44,6 +43,20 @@ const schema = yup.object({
                             return selectedDateTime.isAfter(now);
                           }
                           return true;
+                        })
+                        .test('is-within-operating-hours', 'La hora de inicio está fuera del horario de atención', function(value) {
+                          const { sessionDate } = this.parent;
+                          if (!value || !sessionDate) {
+                            return true;
+                          }
+                          const day = dayjs(sessionDate).day();
+                          const isWeekendOrHoliday = day === 0 || day === 6; // Domingo:0, Sábado:6
+                          const [hours, minutes] = value.split(':').map(Number);
+                          const selectedTime = hours * 60 + minutes;
+                          if (isWeekendOrHoliday) {
+                            return selectedTime >= 10 * 60 && selectedTime < 22 * 60;
+                          }
+                          return selectedTime >= 14 * 60 && selectedTime < 22 * 60;
                         }),
   endTime         : yup.string()
                         .required('Hora fin obligatoria')
@@ -190,10 +203,11 @@ export default function ReservationForm(){
   },[rateType, fields, priceMap])
 
   /* ---------- límites horario ---------- */
-  const minStart = useMemo(
-    () => isWeekend(new Date(sessionDate)) ? '10:00' : '14:00',
-    [sessionDate]
-  )
+  const minStart = useMemo(() => {
+    const day = dayjs(sessionDate).day()
+    const isWeekendOrHoliday = day === 0 || day === 6
+    return isWeekendOrHoliday ? '10:00' : '14:00'
+  }, [sessionDate])
   const maxEnd = '22:00'
 
   /* ---------- UI ---------- */
@@ -202,8 +216,8 @@ export default function ReservationForm(){
       <Typography variant="h5" gutterBottom>Crear Reserva</Typography>
 
       <Alert severity="info" sx={{ mb:2 }}>
-        Horario de Atención: <strong>L-V&nbsp;14:00–22:00</strong> |{' '}
-        <strong>S-D&nbsp;y&nbsp;Feriados 10:00–22:00</strong>
+        Horario de Atención: <strong>L-V 14:00–22:00</strong> |{' '}
+        <strong>Sáb, Dom y Feriados 10:00–22:00</strong>
       </Alert>
 
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
