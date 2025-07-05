@@ -10,14 +10,20 @@ const http = axios.create({
 
 /* -------- INTERCEPTOR GLOBAL DE ERRORES -------- */
 http.interceptors.response.use(null, err => {
-  const { code, message } = err.response?.data ?? {};
+  // 1. Información devuelta por el backend (cuando existe)
+  const code    = err.response?.data?.code;
+  const backend = err.response?.data?.message;
 
+  // 2. Mapeo de códigos conocidos
   const known =
     code === 'CAPACITY_EXCEEDED' ? 'Capacidad de la sesión superada' :
     code === 'SESSION_OVERLAP'   ? 'El horario seleccionado ya está ocupado. Por favor, revise el Rack de disponibilidad.' :
     code === 'DUPLICATE_CODE'    ? 'El código ya existe' :
-    code === 'BAD_REQUEST'       ? message :
-    message                      ? message : 'Error desconocido';
+    code === 'BAD_REQUEST'       ? backend :
+    // 3. Si hay mensaje de backend lo mostramos
+    backend ? backend :
+    // 4. Si la petición nunca llegó al backend o la respuesta no es JSON
+    err.message || `Error HTTP ${err.response?.status ?? ''}`.trim();
 
   const evt = new CustomEvent('httpError', { detail: known });
   window.dispatchEvent(evt);
