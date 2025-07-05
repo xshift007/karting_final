@@ -82,12 +82,11 @@ export default function ReservationForm(){
 
   /* ------------ estado auxiliar ------------ */
   const [clients,  setClients]  = useState([])
-  const [_sessions, setSessions] = useState([])
   const [tariffs,  setTariffs ] = useState([])       // ← tarifas BD
 
   /* ------------ form principal --------------- */
   const {
-    control, setValue, handleSubmit, watch,
+    control, setValue, handleSubmit, watch, trigger,
     formState:{ errors, isSubmitting }
   } = useForm({
     resolver : yupResolver(schema),
@@ -144,17 +143,14 @@ export default function ReservationForm(){
     tariffSvc.list().then(setTariffs)
   },[])
 
-  /* 5) cargar sesiones del día (por ahora sin usar) */
+  /* 4) Revalidar startTime cuando sessionDate cambia */
   useEffect(()=>{
-    if (!sessionDate) return
-    const c = new AbortController()
-    sessionService.weekly(sessionDate, sessionDate, { signal:c.signal })
-      .then(r => setSessions(Object.values(r.data).flat()))
-      .catch(err => { if (!c.signal.aborted) console.error(err) })
-    return ()=>c.abort()
-  },[sessionDate])
+    if(startTime){
+      trigger('startTime')
+    }
+  },[sessionDate, trigger, startTime])
 
-  /* 6) calcular hora fin automática */
+  /* 5) calcular hora fin automática */
   useEffect(()=>{
     if (!startTime || !rateType || !sessionDate) return
     const mins = durMap[rateType] ?? 0
