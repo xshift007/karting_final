@@ -12,9 +12,10 @@ const queryClient = new QueryClient()
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    {/* Captura errores JS en cualquier componente hijo */}
-    <ErrorBoundary>
-      <NotifyProvider>
+    {/* 1. Proveedor de notificaciones */}
+    <NotifyProvider>
+      {/* 2. Límite de error (ahora puede usar notificaciones) */}
+      <ErrorBoundary>
         <QueryClientProvider client={queryClient}>
           {/* Proporciona enrutamiento basado en historial de navegador */}
           <BrowserRouter>
@@ -22,7 +23,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
             <App />
           </BrowserRouter>
         </QueryClientProvider>
-      </NotifyProvider>
-    </ErrorBoundary>
+      </ErrorBoundary>
+    </NotifyProvider>
   </React.StrictMode>
 )
