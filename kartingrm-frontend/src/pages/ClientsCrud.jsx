@@ -2,13 +2,45 @@
 import React, { useEffect, useState } from 'react'
 import { DataGrid } from '@mui/x-data-grid'
 import { Button, Paper, Dialog, TextField, Stack } from '@mui/material'
+import { useForm, Controller } from 'react-hook-form'
+import { yupResolver } from '@hookform/resolvers/yup'
+import * as yup from 'yup'
+import dayjs from 'dayjs'
 import clientService from '../services/client.service'
+
+const schema = yup.object().shape({
+  fullName: yup.string().required('El nombre es obligatorio'),
+  email: yup.string().email('Email inválido').required('El email es obligatorio'),
+  phone: yup.string(),
+  birthDate: yup.date()
+    .required('La fecha de nacimiento es obligatoria')
+    .max(new Date(), 'La fecha de nacimiento no puede ser en el futuro')
+    .test('is-of-age', 'Debes ser mayor de 18 años para registrarte', function (value) {
+      if (!value) return true
+      return dayjs().diff(dayjs(value), 'years') >= 18
+    }),
+})
 
 export default function ClientsCrud() {
   const [rows, setRows] = useState([])
   const [open, setOpen] = useState(false)
   const [edit, setEdit] = useState(null)
-  const [form, setForm] = useState({ fullName:'', email:'', phone:'', birthDate:''/*, adress:''*/ })
+
+  const {
+    control,
+    handleSubmit,
+    setValue,
+    reset,
+    formState: { errors },
+  } = useForm({
+    resolver: yupResolver(schema),
+    defaultValues: {
+      fullName: '',
+      email: '',
+      phone: '',
+      birthDate: '',
+    },
+  })
 
   /* ---------- carga inicial con AbortController ---------- */
   useEffect(() => {
@@ -32,17 +64,29 @@ export default function ClientsCrud() {
     setRows(res.data)
   }
 
-  const handleSave = async () => {
+  const handleOpen = (client = null) => {
+    if (client) {
+      setEdit(client)
+      setValue('fullName', client.fullName)
+      setValue('email', client.email)
+      setValue('phone', client.phone || '')
+      setValue('birthDate', client.birthDate ? dayjs(client.birthDate).format('YYYY-MM-DD') : '')
+    } else {
+      setEdit(null)
+      reset()
+    }
+    setOpen(true)
+  }
+
+  const handleSave = async data => {
     try {
       if (edit) {
-        await clientService.update(edit.id, form)
+        await clientService.update(edit.id, data)
       } else {
-        await clientService.create(form)
+        await clientService.create(data)
       }
       await reload()
       setOpen(false)
-      setEdit(null)
-      setForm({ fullName:'', email:'', phone:'', birthDate:'',/* adress:'' */})
     } catch (e) {
       console.error(e)
     }
@@ -51,7 +95,7 @@ export default function ClientsCrud() {
   /* ---------- JSX ---------- */
   return (
     <Paper sx={{ p:2 }}>
-      <Button variant="contained" onClick={() => setOpen(true)}>
+      <Button variant="contained" onClick={() => handleOpen()}>
         Crear Cliente
       </Button>
 
@@ -68,11 +112,7 @@ export default function ClientsCrud() {
             {
               field:'actions', headerName:'Acciones', width:150,
               renderCell: params => (
-                <Button size="small" onClick={() => {
-                  setEdit(params.row)
-                  setForm(params.row)
-                  setOpen(true)
-                }}>
+                <Button size="small" onClick={() => handleOpen(params.row)}>
                   Editar
                 </Button>
               )
@@ -86,26 +126,64 @@ export default function ClientsCrud() {
       {/* diálogo de alta/edición */}
       <Dialog open={open} onClose={() => setOpen(false)}>
         <Paper sx={{ p:3, width:400 }}>
-          <Stack spacing={2}>
-            <TextField label="Nombre"     value={form.fullName}
-              onChange={e=>setForm({ ...form, fullName:e.target.value })}/>
-            <TextField label="Email"      value={form.email}
-              onChange={e=>setForm({ ...form, email:e.target.value })}/>
-            <TextField label="Teléfono"   value={form.phone}
-              onChange={e=>setForm({ ...form, phone:e.target.value })}/>
-            <TextField label="Nacimiento" type="date" InputLabelProps={{shrink:true}}
-              value={form.birthDate}
-              onChange={e=>setForm({ ...form, birthDate:e.target.value })}/>
-            {/*<TextField
-              label="Dirección"
-                value={form.address}
-                onChange={e => setForm({ ...form, address: e.target.value })}
-            />*/}
-            <Stack direction="row" spacing={2} justifyContent="flex-end">
-              <Button onClick={()=>setOpen(false)}>Cancelar</Button>
-              <Button variant="contained" onClick={handleSave}>Guardar</Button>
+          <form onSubmit={handleSubmit(handleSave)}>
+            <Stack spacing={2}>
+              <Controller
+                name="fullName"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label="Nombre"
+                    error={!!errors.fullName}
+                    helperText={errors.fullName?.message}
+                  />
+                )}
+              />
+              <Controller
+                name="email"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label="Email"
+                    error={!!errors.email}
+                    helperText={errors.email?.message}
+                  />
+                )}
+              />
+              <Controller
+                name="phone"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label="Teléfono"
+                    error={!!errors.phone}
+                    helperText={errors.phone?.message}
+                  />
+                )}
+              />
+              <Controller
+                name="birthDate"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label="Nacimiento"
+                    type="date"
+                    InputLabelProps={{ shrink: true }}
+                    error={!!errors.birthDate}
+                    helperText={errors.birthDate?.message}
+                  />
+                )}
+              />
+              <Stack direction="row" spacing={2} justifyContent="flex-end">
+                <Button onClick={() => setOpen(false)}>Cancelar</Button>
+                <Button type="submit" variant="contained">Guardar</Button>
+              </Stack>
             </Stack>
-          </Stack>
+          </form>
         </Paper>
       </Dialog>
     </Paper>
