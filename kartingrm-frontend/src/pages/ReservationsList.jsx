@@ -86,11 +86,13 @@ export default function ReservationsList() {
                 <TableCell>{r.rateType}</TableCell>
                 <TableCell>{r.status}</TableCell>
                 <TableCell>
-                  {r.status === 'PENDING' &&
+                  <Button size="small" onClick={() => navigate(`/reservations/${r.id}/edit`)}>Editar</Button>
+                  {r.status === 'PENDING' && (
                     <Button color="error" size="small"
                       onClick={() => setConfirm({ open: true, id: r.id })}>
                       Cancelar
-                    </Button>}
+                    </Button>
+                  )}
                 </TableCell>
               </TableRow>
             ))}

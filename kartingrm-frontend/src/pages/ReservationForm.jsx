@@ -1,6 +1,6 @@
 // src/pages/ReservationForm.jsx
 import React, { useEffect, useState, useMemo } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate, useLocation, useParams } from 'react-router-dom'
 import { useForm, useFieldArray, Controller } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
 import * as yup from 'yup'
@@ -83,11 +83,12 @@ const schema = yup.object({
   rateType        : yup.string().required()
 })
 
-export default function ReservationForm(){
+export default function ReservationForm({ edit = false }){
 
   /* ------------ hooks de navegación ------------ */
   const navigate = useNavigate()
   const location = useLocation()
+  const { id } = useParams()
 
   /* ------------ estado auxiliar ------------ */
   const [clients,  setClients]  = useState([])
@@ -138,6 +139,20 @@ export default function ReservationForm(){
     p.get('e') && setValue('endTime',    p.get('e'))
   },[location.search, setValue])
 
+  useEffect(() => {
+    if (edit && id) {
+      reservationService.get(id).then(res => {
+        const { client, session, participantsList, rateType } = res.data
+        setValue('clientId', client.id)
+        setValue('sessionDate', session.sessionDate)
+        setValue('startTime', session.startTime)
+        setValue('endTime', session.endTime)
+        setValue('rateType', rateType)
+        setValue('participantsList', participantsList)
+      })
+    }
+  }, [edit, id, setValue])
+
   /* 3) cargar clientes */
   useEffect(()=>{
     const c = new AbortController()
@@ -181,9 +196,11 @@ export default function ReservationForm(){
         return
       }
 
-      const res = await reservationService.create(data)
+      const promise = edit ? reservationService.update(id, data)
+                           : reservationService.create(data)
+      const res = await promise
 
-      notify('Reserva creada ✅','success')
+      notify(`Reserva ${edit ? 'actualizada' : 'creada'} ✅`,'success')
 
       navigate(`/payments/${res.id}`,{ replace:true })
     }catch(e){

@@ -1,57 +1,53 @@
 package com.kartingrm.controller;
 
 import com.kartingrm.dto.SessionAvailabilityDTO;
-import com.kartingrm.dto.SessionDTO;
 import com.kartingrm.entity.Session;
-import com.kartingrm.repository.ReservationRepository;
-import com.kartingrm.repository.SessionRepository;
+import com.kartingrm.service.SessionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
+import reactor.core.publisher.Flux;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/sessions")
 @RequiredArgsConstructor
 public class SessionController {
 
-    private final SessionRepository      sessionRepository;
-    private final ReservationRepository  reservationRepository;
+    private final SessionService sessionService;
 
     /* ---------- CRUD básico ---------- */
 
     @PostMapping
     public Session createSession(@RequestBody Session session) {
-        return sessionRepository.save(session);
+        return sessionService.create(session);
     }
 
     @GetMapping
     public List<Session> getSessions() {
-        return sessionRepository.findAll();
+        return sessionService.weeklyRack(LocalDate.now());
     }
 
     @PutMapping("/{id}")
     public Session updateSession(@PathVariable Long id,
                                  @RequestBody Session session) {
-        if (!sessionRepository.existsById(id)) {
+        if (!sessionService.weeklyRack(LocalDate.now()).stream().anyMatch(s -> s.getId().equals(id))) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Sesión no existe");
         }
         session.setId(id);
-        return sessionRepository.save(session);
+        return sessionService.create(session);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteSession(@PathVariable Long id) {
-        if (!sessionRepository.existsById(id)) {
-            return ResponseEntity.notFound().build();
-        }
-        sessionRepository.deleteById(id);
+        sessionService.delete(id);
         return ResponseEntity.noContent().build();
     }
 
@@ -61,21 +57,11 @@ public class SessionController {
             @RequestParam LocalDate from,
             @RequestParam LocalDate to) {
 
-        List<Session> sesiones =
-                sessionRepository.findBySessionDateBetween(from, to);
+        return sessionService.getAvailability(from, to);
+    }
 
-        return sesiones.stream()
-                .map(s -> new SessionAvailabilityDTO(
-                        s.getId(),
-                        s.getSessionDate(),
-                        s.getStartTime(),
-                        s.getEndTime(),
-                        s.getCapacity(),
-                        reservationRepository.participantsInSession(s.getId())
-                ))
-                .collect(Collectors.groupingBy(
-                        dto -> dto.sessionDate().getDayOfWeek(),
-                        LinkedHashMap::new,
-                        Collectors.toList()));
+    @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public Flux<Map<DayOfWeek, List<SessionAvailabilityDTO>>> stream() {
+        return sessionService.getAvailabilityStream();
     }
 }
