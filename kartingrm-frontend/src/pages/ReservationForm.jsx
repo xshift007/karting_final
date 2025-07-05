@@ -243,10 +243,10 @@ export default function ReservationForm({ edit = false }){
         <Stack spacing={2}>
 
           {/* ---------- cliente ---------- */}
-          <Controller name="clientId" control={control}
-            render={({ field }) => (
-              <TextField {...field} select label="Cliente"
-                error={!!errors.clientId} helperText={errors.clientId?.message}>
+            <Controller name="clientId" control={control}
+              render={({ field }) => (
+                <TextField {...field} id={field.name} select label="Cliente"
+                  error={!!errors.clientId} helperText={errors.clientId?.message}>
                 {clients.map(c =>
                   <MenuItem key={c.id} value={c.id}>{c.fullName}</MenuItem>)}
               </TextField>
@@ -254,20 +254,20 @@ export default function ReservationForm({ edit = false }){
           />
 
           {/* ---------- fecha ---------- */}
-          <Controller name="sessionDate" control={control}
-            render={({ field }) => (
-              <TextField {...field} type="date" label="Fecha"
-                InputLabelProps={{shrink:true}}
+            <Controller name="sessionDate" control={control}
+              render={({ field }) => (
+                <TextField {...field} id={field.name} type="date" label="Fecha"
+                  InputLabelProps={{shrink:true}}
                 error={!!errors.sessionDate}
                 helperText={errors.sessionDate?.message}/>
             )}
           />
 
           {/* ---------- hora inicio ---------- */}
-          <Controller name="startTime" control={control}
-            render={({ field }) => (
-              <TextField {...field} type="time" label="Hora inicio"
-                InputLabelProps={{shrink:true}}
+            <Controller name="startTime" control={control}
+              render={({ field }) => (
+                <TextField {...field} id={field.name} type="time" label="Hora inicio"
+                  InputLabelProps={{shrink:true}}
                 inputProps={{ step:300, min:minStart, max:maxEnd }}
                 error={!!errors.startTime}
                 helperText={errors.startTime?.message}
@@ -279,10 +279,10 @@ export default function ReservationForm({ edit = false }){
           />
 
           {/* ---------- tipo / vueltas (dinámico) ---------- */}
-          <Controller name="rateType" control={control}
-            render={({ field }) => (
-              <TextField {...field} select label="Tipo de reserva"
-                value={field.value || ''}
+            <Controller name="rateType" control={control}
+              render={({ field }) => (
+                <TextField {...field} id={field.name} select label="Tipo de reserva"
+                  value={field.value || ''}
                 error={!!errors.rateType}
                 helperText={errors.rateType?.message}>
                 <MenuItem value="">Seleccione…</MenuItem>
@@ -294,10 +294,10 @@ export default function ReservationForm({ edit = false }){
           />
 
           {/* ---------- hora fin ---------- */}
-          <Controller name="endTime" control={control}
-            render={({ field }) => (
-              <TextField {...field} type="time" label="Hora fin"
-                InputLabelProps={{shrink:true}}
+            <Controller name="endTime" control={control}
+              render={({ field }) => (
+                <TextField {...field} id={field.name} type="time" label="Hora fin"
+                  InputLabelProps={{shrink:true}}
                 inputProps={{ readOnly:true }} disabled
                 error={!!errors.endTime}
                 helperText={errors.endTime?.message}/>
