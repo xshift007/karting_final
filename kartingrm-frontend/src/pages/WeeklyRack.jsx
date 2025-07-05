@@ -1,16 +1,27 @@
 // src/pages/WeeklyRack.jsx
-import React, { useMemo } from 'react'
+import React, { useEffect, useMemo } from 'react'
 import {
   Table, TableHead, TableBody, TableRow, TableCell,
-  Paper, Typography, Tooltip, Box, Alert, CircularProgress
+  Paper, Typography, Tooltip, Box, Alert, CircularProgress, Stack
 } from '@mui/material'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import dayjs from 'dayjs'
 import sessionSvc from '../services/session.service'
 import { useNavigate } from 'react-router-dom'
 
 const DOW_EN = ['MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY','SUNDAY']
 const DOW_ES = ['LUNES','MARTES','MIÉRCOLES','JUEVES','VIERNES','SÁBADO','DOMINGO']
+
+const Legend = () => (
+  <Stack direction="row" spacing={2} sx={{ mb: 1 }}>
+    {['Libre', 'Parcial', 'Llena'].map((l, i) => (
+      <Stack key={l} direction="row" alignItems="center" spacing={1}>
+        <Box sx={{ width: 16, height: 16, bgcolor: ['#e8f5e9', 'warning.main', '#ffcdd2'][i], borderRadius: 1 }} />
+        <Typography variant="caption">{l}</Typography>
+      </Stack>
+    ))}
+  </Stack>
+)
 
 export default function WeeklyRack({ onCellClickAdmin }) {
   const navigate = useNavigate()
@@ -22,11 +33,22 @@ export default function WeeklyRack({ onCellClickAdmin }) {
   const fetchRack = () =>
     sessionSvc.weekly(from, to).then(r => r.data ?? {})
 
-  const { data: rack = {}, isPending, refetch: _refetch } = useQuery({
+  const { data: rack = {}, isPending } = useQuery({
     queryKey: ['rack', from, to],
     queryFn: fetchRack,
     staleTime: 5 * 60_000
   })
+
+  const queryClient = useQueryClient()
+
+  useEffect(() => {
+    const eventSource = new EventSource('/api/sessions/stream')
+    eventSource.onmessage = (event) => {
+      const newRackData = JSON.parse(event.data)
+      queryClient.setQueryData(['rack', from, to], newRackData)
+    }
+    return () => eventSource.close()
+  }, [from, to, queryClient])
 
   /* ---------- todos los rangos HH:MM-HH:MM existentes ---------- */
   const slots = useMemo(() => {
@@ -71,6 +93,7 @@ export default function WeeklyRack({ onCellClickAdmin }) {
       <Typography variant="h5" gutterBottom>
         Disponibilidad (semana {from})
       </Typography>
+      <Legend />
 
       <Table size="small">
         <TableHead>

@@ -49,6 +49,7 @@ export default function App() {
             <Route path="/" element={<Navigate to="/rack" replace />} />
             <Route path="/rack" element={<WeeklyRack />} />
             <Route path="/reservations/new" element={<ReservationForm />} />
+            <Route path="/reservations/:id/edit" element={<ReservationForm edit />} />
             <Route path="/reservations" element={<ReservationsList />} />
             <Route path="/payments/:reservationId" element={<PaymentPage />} />
             <Route path="/clients" element={<ClientsCrud />} />

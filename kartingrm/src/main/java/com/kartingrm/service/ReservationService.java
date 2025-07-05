@@ -71,6 +71,7 @@ public class ReservationService {
         // 4) Calculamos precios, guardamos reserva y enviamos mail
         var pr = pricing.calculate(dto);
         Reservation r = reservationRepo.save(buildEntity(dto, s, pr, code));
+        sessionSvc.notifyAvailabilityUpdate();
         //TransactionSynchronizationManager.registerSynchronization(
         //        new TransactionSynchronization() {
         //            @Override public void afterCommit() {
@@ -113,7 +114,9 @@ public class ReservationService {
         existing.getParticipantsList()
                 .addAll(toEntities(dto.participantsList(), existing));
 
-        return reservationRepo.save(existing);
+        Reservation saved = reservationRepo.save(existing);
+        sessionSvc.notifyAvailabilityUpdate();
+        return saved;
     }
 
     /* ---------------- consultas ------------------------------------------- */
@@ -128,6 +131,7 @@ public class ReservationService {
 
     public void save(Reservation r) {
         reservationRepo.save(r);
+        sessionSvc.notifyAvailabilityUpdate();
     }
 
     /* ---------------- helpers privados ------------------------------------ */

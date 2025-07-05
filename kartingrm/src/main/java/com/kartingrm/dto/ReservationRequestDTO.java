@@ -1,6 +1,7 @@
 package com.kartingrm.dto;
 
 import com.kartingrm.entity.RateType;
+import com.kartingrm.dto.UniqueEmails;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import jakarta.validation.constraints.AssertTrue;
@@ -9,6 +10,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 
+@UniqueEmails
 public record ReservationRequestDTO(
 
         String reservationCode,
