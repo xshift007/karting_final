@@ -39,7 +39,6 @@ export default function WeeklyRack({ onCellClickAdmin }) {
       .then(r => r.data ?? {})
       .catch(handleError)
 
-  const cellDisabled = (sess) => sess.participantsCount >= sess.capacity
 
   const { data: rack = {}, isPending, refetch: _refetch } = useQuery({
     queryKey: ['rack', from, to],
@@ -102,7 +101,7 @@ export default function WeeklyRack({ onCellClickAdmin }) {
           {slots.map(range => {
             const [start,_end] = range.split('-')
             return (
-              <TableRow key={range} sx={{ backgroundColor: 'success.light' }}>
+              <TableRow key={range}>
                 <TableCell sx={{ fontWeight: 500 }}>{range}</TableCell>
 
                 {DOW_EN.map((dayKey, index) => {
@@ -111,17 +110,18 @@ export default function WeeklyRack({ onCellClickAdmin }) {
                   if (!ses) return <TableCell key={DOW_ES[index] + range}></TableCell>
 
                   const label   = `${ses.participantsCount}/${ses.capacity}`
+                  const full    = ses.participantsCount >= ses.capacity
 
                   return (
                     <TableCell
                       key={DOW_ES[index] + range}
                       sx={{
-                            bgcolor: cellDisabled(ses) ? 'error.light' : 'inherit',
-                            pointerEvents: cellDisabled(ses) ? 'none' : 'auto',
-                            opacity: cellDisabled(ses) ? 0.4 : 1,
-                            textAlign:'center', cursor:'pointer'
+                        p: 1,
+                        bgcolor: full ? 'error.main' : 'success.light',
+                        textAlign: 'center',
+                        cursor: full ? 'default' : 'pointer'
                       }}
-                      onClick={()=>!cellDisabled(ses) && handleCellClick(ses)}
+                      onClick={() => !full && handleCellClick(ses)}
                     >
                       {label}
                     </TableCell>

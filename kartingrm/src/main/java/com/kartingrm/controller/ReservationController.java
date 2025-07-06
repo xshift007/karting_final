@@ -61,4 +61,10 @@ public class ReservationController {
         Reservation updated = reservationService.update(id, dto);
         return reservationMapper.toDto(updated);
     }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        reservationService.deleteReservation(id);
+        return ResponseEntity.noContent().build();
+    }
 }

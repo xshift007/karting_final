@@ -13,4 +13,6 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
              AND MONTH(v.visitDate) = :month
            """)
     int countByClientAndMonth(Long clientId, int year, int month);
+
+    java.util.Optional<Visit> findFirstByClientOrderByVisitDateDesc(Long clientId);
 }

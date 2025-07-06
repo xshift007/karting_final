@@ -5,6 +5,7 @@ import com.kartingrm.entity.Visit;
 import com.kartingrm.repository.ClientRepository;
 import com.kartingrm.repository.VisitRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.YearMonth;
@@ -39,5 +40,12 @@ public class ClientService {
     public void incrementVisits(Client c){
         if (!repo.existsById(c.getId())) return;
         visits.save(new Visit(null, c, LocalDate.now()));
+    }
+
+    @Transactional
+    public void decrementVisits(Client c){
+        if (!repo.existsById(c.getId())) return;
+        visits.findFirstByClientOrderByVisitDateDesc(c.getId())
+                .ifPresent(visits::delete);
     }
 }

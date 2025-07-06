@@ -39,7 +39,7 @@ export default function ReservationsList() {
   }
 
   const cancel = id => {
-    reservationService.cancel(id)
+    reservationService.remove(id)
       .then(() => {
         reload()
         notify('Reserva cancelada', 'success')
@@ -87,13 +87,10 @@ export default function ReservationsList() {
                 <TableCell>{r.rateType}</TableCell>
                 <TableCell>{r.status}</TableCell>
                 <TableCell>
-                  <Button size="small" onClick={() => navigate(`/reservations/${r.id}/edit`)}>Editar</Button>
-                  {r.status === 'PENDING' && (
-                    <Button color="error" size="small"
-                      onClick={() => setConfirm({ open: true, id: r.id })}>
-                      Cancelar
-                    </Button>
-                  )}
+                  <Button color="error" size="small"
+                    onClick={() => setConfirm({ open: true, id: r.id })}>
+                    Eliminar
+                  </Button>
                 </TableCell>
               </TableRow>
             ))}
@@ -102,7 +99,7 @@ export default function ReservationsList() {
       </Paper>
       <ConfirmDialog
         open={confirm.open}
-        msg="¿Estás seguro de que quieres cancelar esta reserva?"
+        msg="¿Estás seguro de que quieres eliminar esta reserva?"
         onClose={() => setConfirm({ open: false, id: null })}
         onConfirm={() => cancel(confirm.id)}
       />
