@@ -17,16 +17,25 @@ public class RestExceptionHandler {
                 .body(new ApiError("SESSION_OVERLAP", ex.getMessage()));
     }
 
+    // RestExceptionHandler.java
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ApiError> handleValidation(MethodArgumentNotValidException ex){
-        boolean sd = ex.getFieldErrors().stream()
-                .anyMatch(f -> f.getDefaultMessage()
-                        .toLowerCase()
-                        .contains("specialday"));
+    public ResponseEntity<ApiError> handleValidation(MethodArgumentNotValidException ex) {
+
+        String msg = ex.getFieldErrors().isEmpty()
+                ? ex.getGlobalErrors().get(0).getDefaultMessage()   // UniqueEmails u otra @ClassConstraint
+                : ex.getFieldErrors().get(0).getDefaultMessage();
+
+        String code;
+        if (msg.toLowerCase().contains("specialday"))       code = "SPECIAL_DAY_MISMATCH";
+        else if (msg.toLowerCase().contains("correos"))     code = "DUPLICATED_EMAIL";   // ⭐️
+        else                                                code = "BAD_REQUEST";
+
         return ResponseEntity.badRequest()
-                .body(new ApiError(sd ? "SPECIAL_DAY_MISMATCH" : "BAD_REQUEST",
-                        ex.getFieldErrors().get(0).getDefaultMessage()));
+                .body(new ApiError(code, msg));
     }
+
+
+
 
     @ExceptionHandler(IllegalStateException.class)
     public ResponseEntity<ApiError> handleIllegalState(IllegalStateException ex){

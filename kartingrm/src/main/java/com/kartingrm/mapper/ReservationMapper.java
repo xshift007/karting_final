@@ -8,8 +8,6 @@ import org.mapstruct.Mapping;
 @Mapper(componentModel = "spring")
 public interface ReservationMapper {
 
-    @Mapping(source = "client",  target = "client")
-    @Mapping(source = "session", target = "session")
     ReservationResponseDTO toDto(Reservation entity);
 
     // sub‑mapeos:
