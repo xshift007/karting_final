@@ -141,7 +141,7 @@ public class ReservationService {
     }
 
     /* ---------------- helpers privados ------------------------------------ */
-    /* ---------- valida weekend / holiday ↔ SpecialDay ---------- */
+    /** REGULAR/WEEKEND/HOLIDAY debe cuadrar con la fecha elegida */
     private void validateSpecialDay(ReservationRequestDTO dto) {
         boolean weekend = dto.sessionDate().getDayOfWeek().getValue() >= 6;
         boolean holiday = holidayService.isHoliday(dto.sessionDate());
