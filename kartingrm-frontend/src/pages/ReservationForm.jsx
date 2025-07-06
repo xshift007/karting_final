@@ -310,8 +310,12 @@ export default function ReservationForm({ edit = false }){
 
           {/*  Muestra info devuelta por backend  */}
           <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
-            <Chip label={`$${preview?.price?.toLocaleString() ?? 0}`} />
-            <Chip label={`${preview?.minutes ?? 0} min`} />
+            <TextField label="Precio"
+                       value={preview?.price ?? ''}
+                       disabled />
+            <TextField label="Duración"
+                       value={preview?.minutes ?? ''}
+                       disabled />
             {preview?.specialDay && preview.specialDay !== 'REGULAR' &&
               <Chip color="warning" label={preview.specialDay} />}
           </Stack>
