@@ -120,4 +120,18 @@ class ReservationServiceTest {
               .isInstanceOf(IllegalArgumentException.class)
               .hasMessageContaining("SpecialDay");
     }
+
+    @Test
+    void specialDayValidation_ok_forWeekend() {
+        ReservationRequestDTO ok = new ReservationRequestDTO(
+                "OK", c.getId(),
+                LocalDate.of(2025, 9, 20), // sábado
+                LocalTime.of(15,0), LocalTime.of(15,30),
+                List.of(new ParticipantDTO("P","p@x.com",false)),
+                com.kartingrm.entity.SpecialDay.WEEKEND,
+                RateType.LAP_10);
+
+        assertThatCode(() -> svc.createReservation(ok))
+                .doesNotThrowAnyException();
+    }
 }

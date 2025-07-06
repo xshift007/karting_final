@@ -141,19 +141,16 @@ public class ReservationService {
     }
 
     /* ---------------- helpers privados ------------------------------------ */
-
+    /* ---------- valida weekend / holiday ↔ SpecialDay ---------- */
     private void validateSpecialDay(ReservationRequestDTO dto) {
-        boolean weekend = dto.sessionDate().getDayOfWeek() == DayOfWeek.SATURDAY
-                        || dto.sessionDate().getDayOfWeek() == DayOfWeek.SUNDAY;
+        boolean weekend = dto.sessionDate().getDayOfWeek().getValue() >= 6;
         boolean holiday = holidayService.isHoliday(dto.sessionDate());
 
-        SpecialDay real = holiday ? SpecialDay.HOLIDAY
+        SpecialDay expected = holiday ? SpecialDay.HOLIDAY
                            : weekend ? SpecialDay.WEEKEND
                                      : SpecialDay.REGULAR;
-
-        if (dto.specialDay() == null || dto.specialDay() != real) {
-            throw new IllegalArgumentException(
-                    "SpecialDay mismatch – expected " + real);
+        if (dto.specialDay() == null || dto.specialDay() != expected) {
+            throw new IllegalArgumentException("SpecialDay mismatch – expected " + expected);
         }
     }
 
