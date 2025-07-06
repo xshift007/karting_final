@@ -1,5 +1,7 @@
 # Karting Final
 
+*Para la versión en español consulta [README.es.md](README.es.md).* 
+
 Karting Final is a reservation management system for a go-kart track. The repository is split in two main modules:
 
 - **kartingrm** – Spring Boot REST API written in Java.
