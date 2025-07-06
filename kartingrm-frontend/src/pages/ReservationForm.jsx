@@ -117,12 +117,11 @@ export default function ReservationForm({ edit = false }){
   })
 
   const notify = useNotify()
-  const apiError = useApiErrorHandler()
+  const handleError = useApiErrorHandler()
   const [toast,setToast] = useState({open:false,msg:'',severity:'success'})
 
   /*  Pre-cálculo de tarifa y tipo de día  */
-  const [tariffInfo, setTariffInfo] =
-        useState({ price: 0, minutes: 0, specialDay: 'REGULAR' })
+  const [preview, setPreview] = useState(null)
 
   /* ---- watchers útiles ---- */
   const sessionDate = watch('sessionDate')
@@ -135,8 +134,8 @@ export default function ReservationForm({ edit = false }){
     tariffSvc.preview(
         dayjs(sessionDate).format('YYYY-MM-DD'),
         rateType)
-      .then(setTariffInfo)
-      .catch(console.error)
+      .then(setPreview)
+      .catch(handleError)
   }, [sessionDate, rateType])
 
   /* ---------- mapas precio / duración ---------- */
@@ -213,7 +212,7 @@ export default function ReservationForm({ edit = false }){
         return
       }
 
-      const payload = { ...data, specialDay: tariffInfo.specialDay }
+      const payload = { ...data, specialDay: preview?.specialDay }
       const promise = edit ? reservationService.update(id, payload)
                            : reservationService.create(payload)
       const res = await promise
@@ -222,7 +221,7 @@ export default function ReservationForm({ edit = false }){
 
       navigate(`/payments/${res.id}`,{ replace:true })
     }catch(e){
-      apiError(e)
+      handleError(e)
     }
   }
 
@@ -311,10 +310,10 @@ export default function ReservationForm({ edit = false }){
 
           {/*  Muestra info devuelta por backend  */}
           <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
-            <Chip label={`$${tariffInfo.price.toLocaleString()}`} />
-            <Chip label={`${tariffInfo.minutes} min`} />
-            {tariffInfo.specialDay !== 'REGULAR' &&
-              <Chip color="warning" label={tariffInfo.specialDay} />}
+            <Chip label={`$${preview?.price?.toLocaleString() ?? 0}`} />
+            <Chip label={`${preview?.minutes ?? 0} min`} />
+            {preview?.specialDay && preview.specialDay !== 'REGULAR' &&
+              <Chip color="warning" label={preview.specialDay} />}
           </Stack>
 
           {/* ---------- hora fin ---------- */}

@@ -8,6 +8,7 @@ import { useQuery } from '@tanstack/react-query'
 import dayjs from 'dayjs'
 import sessionSvc from '../services/session.service'
 import { useNavigate } from 'react-router-dom'
+import { useApiErrorHandler } from '../hooks/useNotify'
 
 const DOW_EN = ['MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY','SUNDAY']
 const DOW_ES = ['LUNES','MARTES','MIÉRCOLES','JUEVES','VIERNES','SÁBADO','DOMINGO']
@@ -27,13 +28,18 @@ const Legend = () => (
 
 export default function WeeklyRack({ onCellClickAdmin }) {
   const navigate = useNavigate()
+  const handleError = useApiErrorHandler()
 
   const monday = dayjs().startOf('week').add(1, 'day')
   const from   = monday.format('YYYY-MM-DD')
   const to     = monday.add(6, 'day').format('YYYY-MM-DD')
 
   const fetchRack = () =>
-    sessionSvc.weekly(from, to).then(r => r.data ?? {})
+    sessionSvc.weekly(from, to)
+      .then(r => r.data ?? {})
+      .catch(handleError)
+
+  const cellDisabled = (sess) => sess.participantsCount >= sess.capacity
 
   const { data: rack = {}, isPending, refetch: _refetch } = useQuery({
     queryKey: ['rack', from, to],
@@ -104,17 +110,18 @@ export default function WeeklyRack({ onCellClickAdmin }) {
 
                   if (!ses) return <TableCell key={DOW_ES[index] + range}></TableCell>
 
-                  const isFull = ses.participantsCount >= ses.capacity
                   const label   = `${ses.participantsCount}/${ses.capacity}`
 
                   return (
                     <TableCell
                       key={DOW_ES[index] + range}
-                      sx={{ bgcolor: isFull ? 'error.main' : undefined,
-                            color:  isFull ? '#fff' : 'inherit',
-                            textAlign:'center', cursor:'pointer',
-                            pointerEvents: isFull ? 'none' : 'auto' }}
-                      onClick={()=>!isFull && handleCellClick(ses)}
+                      sx={{
+                            bgcolor: cellDisabled(ses) ? 'error.light' : 'inherit',
+                            pointerEvents: cellDisabled(ses) ? 'none' : 'auto',
+                            opacity: cellDisabled(ses) ? 0.4 : 1,
+                            textAlign:'center', cursor:'pointer'
+                      }}
+                      onClick={()=>!cellDisabled(ses) && handleCellClick(ses)}
                     >
                       {label}
                     </TableCell>
