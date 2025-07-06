@@ -1,0 +1,45 @@
+/* Grid 7×N */
+.rack{
+  display:grid;
+  grid-template-columns: 60px repeat(7, 1fr);
+  /* 24 filas + encabezado, se expande automáticamente   */
+}
+
+.header{
+  font-weight:600;
+  text-align:center;
+  padding:4px 0;
+  background:#fafafa;
+  border:1px solid #e0e0e0;
+}
+
+.row{ display:contents; }               /* permite que cada hora comparta grid-row */
+
+.cell{
+  height:28px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border:1px solid #e0e0e0;
+  font-size:.75rem;
+  user-select:none;
+}
+
+/* Colores */
+.free { background:#C8E6C9;  cursor:pointer; }  /* green-100 */
+.free:hover{ background:#A5D6A7; }
+
+.busy { background:#E0E0E0; }                   /* grey-300 */
+.busy:hover{ background:#E0E0E0; }
+
+/* leyenda opcional al pie */
+.legend{
+  margin-top:8px;
+  display:flex; gap:16px;
+}
+.legend span{ display:flex; align-items:center; gap:4px; }
+.legend i{
+  width:18px; height:18px; display:inline-block; border:1px solid #ccc;
+}
+.legend .free i{ background:#C8E6C9; }
+.legend .busy i{ background:#E0E0E0;}

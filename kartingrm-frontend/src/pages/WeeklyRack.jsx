@@ -1,146 +1,99 @@
 // src/pages/WeeklyRack.jsx
-import React, { useMemo } from 'react'
+import { useEffect, useState } from 'react'
 import {
-  Table, TableHead, TableBody, TableRow, TableCell,
-  Paper, Typography, Box, Alert, CircularProgress, Stack
+  Paper, Box, Typography, Tooltip,
 } from '@mui/material'
-import { useQuery } from '@tanstack/react-query'
+import { motion } from 'framer-motion'
 import dayjs from 'dayjs'
 import sessionSvc from '../services/session.service'
-import { useNavigate } from 'react-router-dom'
-import { useApiErrorHandler } from '../hooks/useNotify'
+import './WeeklyRack.css'
 
-const DOW_EN = ['MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY','SUNDAY']
-const DOW_ES = ['LUNES','MARTES','MIÉRCOLES','JUEVES','VIERNES','SÁBADO','DOMINGO']
+/* ---------- helpers ---------- */
+const days = ['LU', 'MA', 'MI', 'JU', 'VI', 'SA', 'DO']
+const fmt  = t => t.slice(0,5)       // HH:mm -> HH:mm
 
-const Legend = () => (
-  <Stack direction="row" spacing={2} sx={{ mb: 1 }}>
-    <Stack direction="row" alignItems="center" spacing={1}>
-      <Box sx={{ width: 16, height: 16, bgcolor: 'success.light', borderRadius: 1 }} />
-      <Typography variant="caption">Disponible</Typography>
-    </Stack>
-    <Stack direction="row" alignItems="center" spacing={1}>
-      <Box sx={{ width: 16, height: 16, bgcolor: 'error.main', borderRadius: 1 }} />
-      <Typography variant="caption">Ocupado</Typography>
-    </Stack>
-  </Stack>
-)
+function GridCell({ busy, info, onClick }) {
+  /* busy === true  -> bloque ocupado / pasado
+     busy === false -> disponible                     */
 
-export default function WeeklyRack({ onCellClickAdmin }) {
-  const navigate = useNavigate()
-  const handleError = useApiErrorHandler()
+  const inner = (
+    <Box
+      component={busy ? 'div' : motion.div}
+      whileHover={busy ? undefined : { scale: 1.08 }}
+      className={busy ? 'cell busy' : 'cell free'}
+      onClick={busy ? undefined : onClick}
+    >
+      {info.label}
+    </Box>
+  )
 
-  const monday = dayjs().startOf('week').add(1, 'day')
-  const from   = monday.format('YYYY-MM-DD')
-  const to     = monday.add(6, 'day').format('YYYY-MM-DD')
+  return busy
+    ? <Tooltip title={info.tooltip}>{inner}</Tooltip>
+    : inner
+}
 
-  const fetchRack = () =>
-    sessionSvc.weekly(from, to)
-      .then(r => r.data ?? {})
-      .catch(handleError)
+export default function WeeklyRack() {
+  const [data, setData] = useState({})
 
-
-  const { data: rack = {}, isPending } = useQuery({
-    queryKey: ['rack', from, to],
-    queryFn: fetchRack,
-    staleTime: 5 * 60_000
-  })
-
-
-  /* ---------- rangos de 30 min entre 10:00 y 22:00 ---------- */
-  const slots = useMemo(() => {
-    const result = []
-    let start = dayjs().hour(10).minute(0)
-    const end = dayjs().hour(22).minute(0)
-    while (start.isBefore(end)) {
-      const next = start.add(30, 'minute')
-      result.push(`${start.format('HH:mm')}-${next.format('HH:mm')}`)
-      start = next
-    }
-    return result
+  /* carga inicial */
+  useEffect(() => {
+    const from = dayjs().startOf('week').add(1, 'day')    // lunes
+    const to   = from.add(6, 'day')
+    sessionSvc.weekly(from, to).then(r => setData(r.data))
   }, [])
 
-  const isOpen = (dayIndex, start) => {
-    const [h, m] = start.split(':').map(Number)
-    const minutes = h * 60 + m
-    const minStart = dayIndex >= 5 ? 10 * 60 : 14 * 60
-    return minutes >= minStart
-  }
-
-  const handleCellClick = (ses) => {
-    if (!ses) return
-    if (onCellClickAdmin) {
-      onCellClickAdmin(ses.sessionDate, ses.startTime, ses.endTime)
-      return
-    }
-    navigate(`/reservations/new?d=${ses.sessionDate}&s=${ses.startTime}&e=${ses.endTime}`)
-  }
-
-  /* ---------- JSX ---------- */
-  if (isPending) {
-    return <CircularProgress sx={{ display:'block', mx:'auto', my:4 }}/>
-  }
+  /* ----- grid de 7 columnas × 24 filas (bloques de 30 min) ----- */
+  const rows = Array.from({ length: 24 }, (_, i) =>
+    `${String(i).padStart(2,'0')}:00`)
 
   return (
-    <Paper sx={{ p:2, overflowX:'auto' }}>
-      <Legend />
-      <Alert severity="info" sx={{ mb:2 }}>
-        Horario de Atención:
-        <strong> Lunes–Viernes 14:00–22:00</strong> |
-        <strong> Sábados, Domingos y Feriados 10:00–22:00</strong>
-      </Alert>
-      <Typography variant="h5" gutterBottom>
-        Disponibilidad (semana {from})
-      </Typography>
+    <Paper sx={{ p: 2 }}>
+      <Typography variant="h6" gutterBottom>Rack semanal</Typography>
 
-      <Table size="small">
-        <TableHead>
-          <TableRow>
-            <TableCell sx={{ fontWeight:'bold' }}>Hora</TableCell>
-            {DOW_ES.map(d=>(
-              <TableCell key={d} sx={{ fontWeight:'bold', textAlign:'center' }}>
-                {d.slice(0,3)}
-              </TableCell>
-            ))}
-          </TableRow>
-        </TableHead>
+      <Box className="rack">
+        {/* encabezado horizontal */}
+        <Box className="header empty" />
+        {days.map(d => <Box key={d} className="header">{d}</Box>)}
 
-        <TableBody>
-          {slots.map(range => {
-            const [start,_end] = range.split('-')
-            return (
-              <TableRow key={range}>
-                <TableCell sx={{ fontWeight: 500 }}>{range}</TableCell>
+        {/* grid cells */}
+        {rows.map(hour => (
+          <Box key={hour} className="row">
+            <Box className="header">{hour}</Box>
+            {days.map((d, idx) => {
+              const dayIdx = (idx + 1) % 7          // DayOfWeek enum 1-7
+              const blocks = data[dayIdx] ?? []
+              const blk = blocks.find(b =>
+                fmt(b.startTime) === hour)
+              const busy = blk ? blk.participantsCount >= blk.capacity : false
 
-                {DOW_EN.map((dayKey, index) => {
-                  if (!isOpen(index, start)) {
-                    return <TableCell key={DOW_ES[index] + range}></TableCell>
+              const info = blk
+                ? {
+                    label: `${blk.participantsCount}/${blk.capacity}`,
+                    tooltip: busy
+                      ? 'Sesión completa'
+                      : `Quedan ${blk.capacity-blk.participantsCount}`
                   }
+                : { label:'', tooltip:'' }
 
-                  const ses = rack?.[dayKey]?.find(s=>s.startTime === start)
-                  const full = ses && ses.participantsCount >= ses.capacity
-                  const label = ses ? `${ses.participantsCount}/${ses.capacity}` : ''
-
-                  return (
-                    <TableCell
-                      key={DOW_ES[index] + range}
-                      sx={{
-                        p: 1,
-                        bgcolor: full ? 'error.main' : 'success.light',
-                        textAlign: 'center',
-                        cursor: ses && !full ? 'pointer' : 'default'
-                      }}
-                      onClick={() => ses && !full && handleCellClick(ses)}
-                    >
-                      {label}
-                    </TableCell>
-                  )
-                })}
-              </TableRow>
-            )
-          })}
-        </TableBody>
-      </Table>
+              return (
+                <GridCell
+                  key={`${hour}-${idx}`}
+                  busy={busy || !blk}
+                  info={info}
+                  onClick={()=>{
+                    // abre el formulario con fecha/hora pre-seleccionados
+                    const date = dayjs().startOf('week').add(idx, 'day')
+                                    .format('YYYY-MM-DD')
+                    window.location = `/reservations/new?d=${date}`
+                                     + `&start=${fmt(blk.startTime)}`
+                                     + `&end=${fmt(blk.endTime)}`
+                  }}
+                />
+              )
+            })}
+          </Box>
+        ))}
+      </Box>
     </Paper>
   )
 }
