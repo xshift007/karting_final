@@ -2,7 +2,7 @@
 import React, { useMemo } from 'react'
 import {
   Table, TableHead, TableBody, TableRow, TableCell,
-  Paper, Typography, Tooltip, Box, Alert, CircularProgress, Stack
+  Paper, Typography, Box, Alert, CircularProgress, Stack
 } from '@mui/material'
 import { useQuery } from '@tanstack/react-query'
 import dayjs from 'dayjs'
@@ -40,24 +40,32 @@ export default function WeeklyRack({ onCellClickAdmin }) {
       .catch(handleError)
 
 
-  const { data: rack = {}, isPending, refetch: _refetch } = useQuery({
+  const { data: rack = {}, isPending } = useQuery({
     queryKey: ['rack', from, to],
     queryFn: fetchRack,
     staleTime: 5 * 60_000
   })
 
 
-  /* ---------- todos los rangos HH:MM-HH:MM existentes ---------- */
+  /* ---------- rangos de 30 min entre 10:00 y 22:00 ---------- */
   const slots = useMemo(() => {
-    if (!rack || !Object.keys(rack).length) return []        // <= guarda
-    return Array.from(
-      new Set(
-        Object.values(rack)
-          .flat()
-          .map(s => `${s.startTime}-${s.endTime}`)
-      )
-    ).sort((a,b)=>a.localeCompare(b))
-  }, [rack])
+    const result = []
+    let start = dayjs().hour(10).minute(0)
+    const end = dayjs().hour(22).minute(0)
+    while (start.isBefore(end)) {
+      const next = start.add(30, 'minute')
+      result.push(`${start.format('HH:mm')}-${next.format('HH:mm')}`)
+      start = next
+    }
+    return result
+  }, [])
+
+  const isOpen = (dayIndex, start) => {
+    const [h, m] = start.split(':').map(Number)
+    const minutes = h * 60 + m
+    const minStart = dayIndex >= 5 ? 10 * 60 : 14 * 60
+    return minutes >= minStart
+  }
 
   const handleCellClick = (ses) => {
     if (!ses) return
@@ -105,12 +113,13 @@ export default function WeeklyRack({ onCellClickAdmin }) {
                 <TableCell sx={{ fontWeight: 500 }}>{range}</TableCell>
 
                 {DOW_EN.map((dayKey, index) => {
+                  if (!isOpen(index, start)) {
+                    return <TableCell key={DOW_ES[index] + range}></TableCell>
+                  }
+
                   const ses = rack?.[dayKey]?.find(s=>s.startTime === start)
-
-                  if (!ses) return <TableCell key={DOW_ES[index] + range}></TableCell>
-
-                  const label   = `${ses.participantsCount}/${ses.capacity}`
-                  const full    = ses.participantsCount >= ses.capacity
+                  const full = ses && ses.participantsCount >= ses.capacity
+                  const label = ses ? `${ses.participantsCount}/${ses.capacity}` : ''
 
                   return (
                     <TableCell
@@ -119,9 +128,9 @@ export default function WeeklyRack({ onCellClickAdmin }) {
                         p: 1,
                         bgcolor: full ? 'error.main' : 'success.light',
                         textAlign: 'center',
-                        cursor: full ? 'default' : 'pointer'
+                        cursor: ses && !full ? 'pointer' : 'default'
                       }}
-                      onClick={() => !full && handleCellClick(ses)}
+                      onClick={() => ses && !full && handleCellClick(ses)}
                     >
                       {label}
                     </TableCell>
