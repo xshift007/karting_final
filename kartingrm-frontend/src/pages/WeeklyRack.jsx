@@ -104,29 +104,19 @@ export default function WeeklyRack({ onCellClickAdmin }) {
 
                   if (!ses) return <TableCell key={DOW_ES[index] + range}></TableCell>
 
-                  const isOccupied = ses.participantsCount > 0;
+                  const isFull = ses.participantsCount >= ses.capacity
                   const label   = `${ses.participantsCount}/${ses.capacity}`
-                                  
+
                   return (
-                    <TableCell key={DOW_ES[index] + range} sx={{ p:0 }}>
-                      <Tooltip title={isOccupied ? `Ocupado ${label}` : `Disponible ${label}`}>
-                        <Box
-                          sx={{
-                            bgcolor: isOccupied ? 'error.main' : 'transparent',
-                            color:  isOccupied ? '#fff' : 'inherit',
-                            py: .5,
-                            cursor: isOccupied ? 'not-allowed':'pointer',
-                            textAlign:'center',
-                            '&:hover': { 
-                                opacity: isOccupied ? 1 : 0.8,
-                                backgroundColor: isOccupied ? 'error.main' : 'success.dark'
-                            }
-                          }}
-                          onClick={()=>!isOccupied && handleCellClick(ses)}
-                        >
-                          {label}
-                        </Box>
-                      </Tooltip>
+                    <TableCell
+                      key={DOW_ES[index] + range}
+                      sx={{ bgcolor: isFull ? 'error.main' : undefined,
+                            color:  isFull ? '#fff' : 'inherit',
+                            textAlign:'center', cursor:'pointer',
+                            pointerEvents: isFull ? 'none' : 'auto' }}
+                      onClick={()=>!isFull && handleCellClick(ses)}
+                    >
+                      {label}
                     </TableCell>
                   )
                 })}

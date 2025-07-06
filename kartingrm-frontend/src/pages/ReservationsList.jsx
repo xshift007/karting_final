@@ -6,7 +6,7 @@ import {
   Paper, Button, Stack, Typography, CircularProgress, Box
 } from '@mui/material'
 import reservationService from '../services/reservation.service'
-import { useNotify } from '../hooks/useNotify'
+import { useNotify, useApiErrorHandler } from '../hooks/useNotify'
 import ConfirmDialog from '../components/ConfirmDialog'
 
 export default function ReservationsList() {
@@ -15,6 +15,7 @@ export default function ReservationsList() {
   const [confirm, setConfirm] = useState({ open: false, id: null })
   const navigate = useNavigate()
   const notify = useNotify()
+  const handleError = useApiErrorHandler()
 
   /* carga con AbortController */
   useEffect(() => {
@@ -23,7 +24,7 @@ export default function ReservationsList() {
     reservationService.list({ signal: controller.signal })
       .then(r => setList(r.data))
       .catch(err => {
-        if (!controller.signal.aborted) console.error(err)
+        if (!controller.signal.aborted) handleError(err)
       })
       .finally(() => setLoading(false))
 
@@ -43,7 +44,7 @@ export default function ReservationsList() {
         reload()
         notify('Reserva cancelada', 'success')
       })
-      .catch(err => notify(err.response?.data?.message || err.message, 'error'))
+      .catch(err => handleError(err))
       .finally(() => setConfirm({ open: false, id: null }))
   }
 

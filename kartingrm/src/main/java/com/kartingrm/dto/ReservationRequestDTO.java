@@ -56,16 +56,12 @@ public record ReservationRequestDTO(
 
     public SpecialDay specialDay(){ return specialDay; }
 
-    /* coherencia weekend / holiday */
-    @AssertTrue(message = "SpecialDay no coincide con la fecha")
-    public boolean isSpecialDayConsistent(){
-        if (specialDay == null) return true;               // retro-compatibilidad
+    /* coherencia weekend / holiday --> se valida en ReservationService   */
+    @AssertTrue(message = "specialDay no puede ser REGULAR en fin de semana")
+    public boolean notRegularOnWeekend(){
+        if (specialDay == null) return true;
         boolean weekend = sessionDate.getDayOfWeek()==DayOfWeek.SATURDAY
                        || sessionDate.getDayOfWeek()==DayOfWeek.SUNDAY;
-        boolean holiday = false; // ⇒ usar HolidayService en Service layer
-        SpecialDay real = holiday ? SpecialDay.HOLIDAY :
-                         weekend ? SpecialDay.WEEKEND :
-                                   SpecialDay.REGULAR;
-        return real == specialDay;
+        return !(weekend && specialDay == SpecialDay.REGULAR);
     }
 }

@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Paper, Typography, Button, Stack, CircularProgress } from '@mui/material'
 import paymentService from '../services/payment.service'
-import { useNotify } from '../hooks/useNotify'
+import { useNotify, useApiErrorHandler } from '../hooks/useNotify'
 
 export default function PaymentPage() {
   const { reservationId } = useParams()
@@ -10,6 +10,7 @@ export default function PaymentPage() {
   const [loading, setLoading] = useState(false)
   const navigate          = useNavigate()
   const notify            = useNotify()
+  const handleError       = useApiErrorHandler()
 
   const handlePay = async () => {
     setLoading(true)
@@ -24,7 +25,7 @@ export default function PaymentPage() {
       setPaid(true)
       notify('Pago realizado ✅','success')
     } catch (e) {
-      notify(e.response?.data?.message || e.message, 'error')
+      handleError(e)
     } finally {
       setLoading(false)
     }

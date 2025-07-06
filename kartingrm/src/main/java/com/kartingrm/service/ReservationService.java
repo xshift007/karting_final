@@ -10,6 +10,9 @@ import com.kartingrm.repository.ReservationRepository;
 import com.kartingrm.repository.SessionRepository;
 import com.kartingrm.service.mail.MailService;
 import com.kartingrm.service.pricing.PricingService;
+import com.kartingrm.entity.SpecialDay;
+import com.kartingrm.service.pricing.TariffService;
+import com.kartingrm.service.pricing.TariffService.TariffResult;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -29,6 +32,7 @@ public class ReservationService {
     /* NUEVO : necesitamos consultar superposiciones y aforo */
     private final SessionRepository sessionRepo;
     private final PricingService pricing;
+    private final TariffService  tariff;
     private final MailService mail;
 
     private static final SecureRandom RND = new SecureRandom();
@@ -63,6 +67,13 @@ public class ReservationService {
         if (already + incoming > s.getCapacity()) {
             throw new IllegalStateException("Capacidad de la sesión superada");
         }
+
+        /* 1.  Calcula precio minuto + clasificación real ----------------- */
+        TariffResult tr = tariff.resolve(dto.sessionDate(), dto.rateType());
+        SpecialDay   realSd = tr.specialDay();
+
+        if (dto.specialDay()!=null && dto.specialDay()!=realSd)
+            throw new IllegalArgumentException("SpecialDay no coincide con la fecha");
 
         // 3) Generamos código único
         String code;
@@ -102,6 +113,13 @@ public class ReservationService {
 
         Session s = existing.getSession();
         int requested = dto.participantsList().size();
+
+        /* 1.  Calcula precio minuto + clasificación real ----------------- */
+        TariffResult tr = tariff.resolve(dto.sessionDate(), dto.rateType());
+        SpecialDay   realSd = tr.specialDay();
+
+        if (dto.specialDay()!=null && dto.specialDay()!=realSd)
+            throw new IllegalArgumentException("SpecialDay no coincide con la fecha");
 
         var pr = pricing.calculate(dto);
 
