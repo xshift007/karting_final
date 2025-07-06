@@ -44,7 +44,7 @@ class PricingServiceTest {
         when(clientSvc.getTotalVisitsThisMonth(client)).thenReturn(0);
 
         var participants = List.of(new ParticipantDTO("X","x@x",false));
-        var req = new ReservationRequestDTO("C",1L, LocalDate.now(), LocalTime.NOON, LocalTime.NOON.plusMinutes(30), participants, RateType.LAP_10);
+        var req = new ReservationRequestDTO("C",1L, LocalDate.now(), LocalTime.NOON, LocalTime.NOON.plusMinutes(30), participants, null, RateType.LAP_10);
 
         var res = pricingSvc.calculate(req);
 
@@ -72,7 +72,7 @@ class PricingServiceTest {
                 new ParticipantDTO("B","b@b",false),
                 new ParticipantDTO("C","c@c",false)
         );
-        var req = new ReservationRequestDTO("R",1L, LocalDate.of(2025,5,17), LocalTime.NOON, LocalTime.NOON.plusMinutes(35), parts, RateType.LAP_15);
+        var req = new ReservationRequestDTO("R",1L, LocalDate.of(2025,5,17), LocalTime.NOON, LocalTime.NOON.plusMinutes(35), parts, null, RateType.LAP_15);
 
         var out = pricingSvc.calculate(req);
         // group=10%, freq=20%, finalPrice = 3000*(1-0.1)*(1-0.2)*3 ≈?

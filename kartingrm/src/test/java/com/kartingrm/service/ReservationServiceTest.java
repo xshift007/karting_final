@@ -43,7 +43,7 @@ class ReservationServiceTest {
                 "R1", c.getId(),
                 LocalDate.now().plusDays(1),
                 LocalTime.of(15,0), LocalTime.of(15,30),
-                list2, RateType.LAP_10);
+                list2, null, RateType.LAP_10);
 
         Reservation r = svc.createReservation(dto1);
         assertThat(r.getParticipants()).isEqualTo(2);
@@ -57,7 +57,7 @@ class ReservationServiceTest {
                 "R1", c.getId(),
                 r.getSession().getSessionDate(),
                 r.getSession().getStartTime(), r.getSession().getEndTime(),
-                list3, RateType.LAP_10);
+                list3, null, RateType.LAP_10);
 
         Reservation updated = svc.update(r.getId(), dto2);
         assertThat(updated.getParticipants()).isEqualTo(3);
@@ -73,7 +73,7 @@ class ReservationServiceTest {
                 "R2", c.getId(),
                 LocalDate.now().plusDays(1),
                 LocalTime.of(15,0), LocalTime.of(15,30),
-                full, RateType.LAP_10);
+                full, null, RateType.LAP_10);
 
         Reservation r = svc.createReservation(dto1);
 
@@ -84,7 +84,7 @@ class ReservationServiceTest {
                 "R2", c.getId(),
                 r.getSession().getSessionDate(),
                 r.getSession().getStartTime(), r.getSession().getEndTime(),
-                overflow, RateType.LAP_10);
+                overflow, null, RateType.LAP_10);
 
         assertThatThrownBy(() -> svc.update(r.getId(), dto2))
                 .isInstanceOf(IllegalStateException.class)
@@ -98,7 +98,7 @@ class ReservationServiceTest {
                 LocalDate.now().plusDays(2),
                 LocalTime.of(16,0), LocalTime.of(16,30),
                 List.of(new ParticipantDTO("P","p@x.com",false)),
-                RateType.LAP_10);
+                null, RateType.LAP_10);
 
         Reservation r1 = svc.createReservation(dto);
         Reservation r2 = svc.createReservation(dto);
