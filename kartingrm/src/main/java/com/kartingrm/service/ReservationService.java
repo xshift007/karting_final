@@ -11,8 +11,8 @@ import com.kartingrm.repository.SessionRepository;
 import com.kartingrm.service.mail.MailService;
 import com.kartingrm.service.pricing.PricingService;
 import com.kartingrm.entity.SpecialDay;
-import com.kartingrm.service.pricing.TariffService;
-import com.kartingrm.service.pricing.TariffService.TariffResult;
+import java.time.DayOfWeek;
+import com.kartingrm.service.HolidayService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -32,8 +32,8 @@ public class ReservationService {
     /* NUEVO : necesitamos consultar superposiciones y aforo */
     private final SessionRepository sessionRepo;
     private final PricingService pricing;
-    private final TariffService  tariff;
     private final MailService mail;
+    private final HolidayService holidayService;
 
     private static final SecureRandom RND = new SecureRandom();
     private static final String ABC = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -44,6 +44,7 @@ public class ReservationService {
     /* ---------------- crear ------------------------------------------------ */
     @Transactional
     public Reservation createReservation(ReservationRequestDTO dto) {
+        validateSpecialDay(dto);
 
         /* ---------- 1) PREVENIR SOLAPES DE BLOQUES ---------- */
         boolean overlap = sessionRepo.existsOverlap(
@@ -68,13 +69,6 @@ public class ReservationService {
             throw new IllegalStateException("Capacidad de la sesión superada");
         }
 
-        /* 1.  Calcula precio minuto + clasificación real ----------------- */
-        TariffResult tr = tariff.resolve(dto.sessionDate(), dto.rateType());
-        SpecialDay   realSd = tr.specialDay();
-
-        if (dto.specialDay()!=null && dto.specialDay()!=realSd)
-            throw new IllegalArgumentException("SpecialDay no coincide con la fecha");
-
         // 3) Generamos código único
         String code;
         do { code = nextCode(); } while (reservationRepo.existsByReservationCode(code));
@@ -95,6 +89,7 @@ public class ReservationService {
     /* ---------------- actualizar ------------------------------------------ */
     @Transactional
     public Reservation update(Long id, ReservationRequestDTO dto) {
+        validateSpecialDay(dto);
 
         Reservation existing = findById(id);
 
@@ -113,13 +108,6 @@ public class ReservationService {
 
         Session s = existing.getSession();
         int requested = dto.participantsList().size();
-
-        /* 1.  Calcula precio minuto + clasificación real ----------------- */
-        TariffResult tr = tariff.resolve(dto.sessionDate(), dto.rateType());
-        SpecialDay   realSd = tr.specialDay();
-
-        if (dto.specialDay()!=null && dto.specialDay()!=realSd)
-            throw new IllegalArgumentException("SpecialDay no coincide con la fecha");
 
         var pr = pricing.calculate(dto);
 
@@ -153,6 +141,21 @@ public class ReservationService {
     }
 
     /* ---------------- helpers privados ------------------------------------ */
+
+    private void validateSpecialDay(ReservationRequestDTO dto) {
+        boolean weekend = dto.sessionDate().getDayOfWeek() == DayOfWeek.SATURDAY
+                        || dto.sessionDate().getDayOfWeek() == DayOfWeek.SUNDAY;
+        boolean holiday = holidayService.isHoliday(dto.sessionDate());
+
+        SpecialDay real = holiday ? SpecialDay.HOLIDAY
+                           : weekend ? SpecialDay.WEEKEND
+                                     : SpecialDay.REGULAR;
+
+        if (dto.specialDay() == null || dto.specialDay() != real) {
+            throw new IllegalArgumentException(
+                    "SpecialDay mismatch – expected " + real);
+        }
+    }
 
     private String nextCode() {
         return RND.ints(6, 0, ABC.length())
