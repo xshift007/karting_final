@@ -107,23 +107,24 @@ export default function WeeklyRack({ onCellClickAdmin }) {
                 {DOW_EN.map((dayKey, index) => {
                   const ses = rack?.[dayKey]?.find(s=>s.startTime === start)
 
-                  if (!ses) return <TableCell key={DOW_ES[index] + range}></TableCell>
-
-                  const label   = `${ses.participantsCount}/${ses.capacity}`
-                  const full    = ses.participantsCount >= ses.capacity
+                  if (!ses) {
+                    return (
+                      <TableCell
+                        key={DOW_ES[index] + range}
+                        sx={{ bgcolor: 'success.light', textAlign:'center' }}
+                      >
+                        Disponible
+                      </TableCell>
+                    )
+                  }
 
                   return (
                     <TableCell
                       key={DOW_ES[index] + range}
-                      sx={{
-                        p: 1,
-                        bgcolor: full ? 'error.main' : 'success.light',
-                        textAlign: 'center',
-                        cursor: full ? 'default' : 'pointer'
-                      }}
-                      onClick={() => !full && handleCellClick(ses)}
+                      sx={{ bgcolor: 'error.main', textAlign: 'center' }}
+                      onClick={() => handleCellClick(ses)}
                     >
-                      {label}
+                      Ocupado
                     </TableCell>
                   )
                 })}
