@@ -6,6 +6,7 @@ import com.kartingrm.entity.Client;
 import com.kartingrm.entity.Participant;
 import com.kartingrm.entity.Reservation;
 import com.kartingrm.entity.Session;
+import com.kartingrm.entity.ReservationStatus;
 import com.kartingrm.repository.ReservationRepository;
 import com.kartingrm.repository.SessionRepository;
 import com.kartingrm.service.mail.MailService;
@@ -137,6 +138,20 @@ public class ReservationService {
 
     public void save(Reservation r) {
         reservationRepo.save(r);
+        sessionSvc.notifyAvailabilityUpdate();
+    }
+
+    @Transactional
+    public void deleteReservation(Long id) {
+        Reservation r = findById(id);
+        if (r.getStatus() == ReservationStatus.CONFIRMED) {
+            clients.decrementVisits(r.getClient());
+        }
+        reservationRepo.delete(r);
+        Long sessId = r.getSession().getId();
+        if (reservationRepo.participantsInSession(sessId) == 0) {
+            sessionSvc.delete(sessId);
+        }
         sessionSvc.notifyAvailabilityUpdate();
     }
 
