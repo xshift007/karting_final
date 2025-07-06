@@ -1,60 +1,121 @@
 // src/pages/WeeklyRack.jsx
-import React, { useState, useEffect } from 'react'
-import { Table, TableHead, TableBody, TableRow, TableCell, Paper, CircularProgress } from '@mui/material'
-import dayjs from 'dayjs'
+import React, { useEffect, useState, useMemo } from 'react'
+import {
+  Table, TableHead, TableBody, TableRow, TableCell,
+  Paper, Typography, Tooltip, Box, Alert
+} from '@mui/material'
+import sessionService from '../services/session.service'
+import { format, addDays, startOfWeek } from 'date-fns'
 import { useNavigate } from 'react-router-dom'
-import sessionSvc from '../services/session.service'
 
-const DOW_EN = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY']
-const DOW_ES = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM']
+const DOW = ['MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY','SUNDAY']
 
-export default function WeeklyRack() {
+export default function WeeklyRack({ onCellClickAdmin }) {
+  const [rack, setRack] = useState({})          // nunca null
   const navigate = useNavigate()
-  const [rack, setRack] = useState(null)
 
+  const monday = startOfWeek(new Date(), { weekStartsOn:1 })
+  const from   = format(monday,'yyyy-MM-dd')
+  const to     = format(addDays(monday,6),'yyyy-MM-dd')
+
+  /* ---------- carga con AbortController ---------- */
   useEffect(() => {
-    const monday = dayjs().startOf('week').add(1, 'day')
-    const from = monday.format('YYYY-MM-DD')
-    const to = monday.add(6, 'day').format('YYYY-MM-DD')
-    sessionSvc.weekly(from, to).then(r => setRack(r.data ?? {}))
-  }, [])
+    const controller = new AbortController()
 
-  if (!rack) {
-    return <CircularProgress sx={{ display: 'block', mx: 'auto', my: 4 }} />
+    sessionService.weekly(from, to, { signal: controller.signal })
+      .then(r => setRack(r.data ?? {}))        // <= fallback seguro
+      .catch(err => {
+        if (!controller.signal.aborted) console.error(err)
+      })
+
+    return () => controller.abort()
+  }, [from, to])
+
+  /* ---------- todos los rangos HH:MM-HH:MM existentes ---------- */
+  const slots = useMemo(() => {
+    if (!rack || !Object.keys(rack).length) return []        // <= guarda
+    return Array.from(
+      new Set(
+        Object.values(rack)
+          .flat()
+          .map(s => `${s.startTime}-${s.endTime}`)
+      )
+    ).sort((a,b)=>a.localeCompare(b))
+  }, [rack])
+
+  /* ---------- helpers UI ---------- */
+  const cellColor = pct => (
+    pct === 1        ? 'error.main'    // rojo full
+    : pct >= 0.7     ? 'warning.main'  // naranja casi lleno
+    : 'success.main'                   // verde disponible
+  )
+
+  const handleCellClick = (ses) => {
+    if (!ses) return
+    if (onCellClickAdmin) {
+      onCellClickAdmin(ses.sessionDate, ses.startTime, ses.endTime)
+      return
+    }
+    navigate(`/reservations/new?d=${ses.sessionDate}&s=${ses.startTime}&e=${ses.endTime}`)
   }
 
-  const ranges = Array.from(new Set(
-    Object.values(rack).flat().map(s => `${s.startTime}-${s.endTime}`)
-  )).sort()
-
+  /* ---------- JSX ---------- */
   return (
-    <Paper sx={{ p: 2, overflowX: 'auto' }}>
+    <Paper sx={{ p:2, overflowX:'auto' }}>
+      <Alert severity="info" sx={{ mb:2 }}>
+        Horario de Atención:
+        <strong> Lunes–Viernes 14:00–22:00</strong> |
+        <strong> Sábados, Domingos y Feriados 10:00–22:00</strong>
+      </Alert>
+      <Typography variant="h5" gutterBottom>
+        Disponibilidad (semana {from})
+      </Typography>
+
       <Table size="small">
         <TableHead>
           <TableRow>
-            <TableCell>Hora</TableCell>
-            {DOW_ES.map(d => (
-              <TableCell key={d} align="center">{d}</TableCell>
+            <TableCell sx={{ fontWeight:'bold' }}>Hora</TableCell>
+            {DOW.map(d=>(
+              <TableCell key={d} sx={{ fontWeight:'bold', textAlign:'center' }}>
+                {d.slice(0,3)}
+              </TableCell>
             ))}
           </TableRow>
         </TableHead>
+
         <TableBody>
-          {ranges.map(range => {
-            const start = range.split('-')[0]
+          {slots.map(range => {
+            const [start,end] = range.split('-')
             return (
               <TableRow key={range}>
-                <TableCell sx={{ fontWeight: 500 }}>{range}</TableCell>
-                {DOW_EN.map(dayKey => {
-                  const ses = rack[dayKey]?.find(s => s.startTime === start)
-                  if (!ses) return <TableCell key={dayKey}></TableCell>
-                  const free = ses.participantsCount < ses.capacity
+                <TableCell sx={{ fontWeight:500 }}>{range}</TableCell>
+
+                {DOW.map((d,idx)=>{
+                  const ses = rack?.[d]?.find(s=>s.startTime === start)
+
+                  if (!ses) return <TableCell key={d+range}></TableCell>
+
+                  const pct     = ses.participantsCount / ses.capacity
+                  const isFull  = pct === 1
+                  const label   = `${ses.participantsCount}/${ses.capacity}`
+                                  
                   return (
-                    <TableCell
-                      key={dayKey}
-                      sx={{ bgcolor: free ? 'success.light' : 'error.main', textAlign: 'center', cursor: free ? 'pointer' : 'default' }}
-                      onClick={() => free && navigate(`/reservations/new?d=${ses.sessionDate}&s=${ses.startTime}&e=${ses.endTime}`)}
-                    >
-                      {free ? 'Disponible' : 'Ocupado'}
+                    <TableCell key={d+range} sx={{ p:0 }}>
+                      <Tooltip title={`Reservados ${label}`}>
+                        <Box
+                          sx={{
+                            bgcolor: cellColor(pct),
+                            color:  '#fff',
+                            py: .5,
+                            cursor: isFull ? 'not-allowed':'pointer',
+                            textAlign:'center',
+                            '&:hover': { opacity: isFull ? 1 : .8 }
+                          }}
+                          onClick={()=>!isFull && handleCellClick(ses)}
+                        >
+                          {label}
+                        </Box>
+                      </Tooltip>
                     </TableCell>
                   )
                 })}
