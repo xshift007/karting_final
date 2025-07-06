@@ -4,6 +4,8 @@ import com.kartingrm.entity.Visit;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
+import java.util.Optional;
+
 public interface VisitRepository extends JpaRepository<Visit, Long> {
 
     @Query("""
@@ -14,5 +16,6 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
            """)
     int countByClientAndMonth(Long clientId, int year, int month);
 
-    java.util.Optional<Visit> findFirstByClientOrderByVisitDateDesc(Long clientId);
+    Optional<Visit> findFirstByClientIdOrderByVisitDateDesc(Long clientId);
+
 }

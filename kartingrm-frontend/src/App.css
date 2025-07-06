@@ -36,3 +36,12 @@
 .read-the-docs {
   color: #888;
 }
+
+
+.session-full {
+  background-color:#ffebee;   /* very light red */
+}
+
+.session-full:hover {
+  background-color:#ffcdd2;   /* darker on hover */
+}

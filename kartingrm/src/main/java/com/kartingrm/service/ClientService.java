@@ -45,7 +45,8 @@ public class ClientService {
     @Transactional
     public void decrementVisits(Client c){
         if (!repo.existsById(c.getId())) return;
-        visits.findFirstByClientOrderByVisitDateDesc(c.getId())
+        visits.findFirstByClientIdOrderByVisitDateDesc(c.getId())
                 .ifPresent(visits::delete);
+
     }
 }

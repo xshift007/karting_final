@@ -9,4 +9,5 @@ INSERT INTO tariff_config (rate, price, minutes) VALUES
 
 INSERT INTO holidays (date, name) VALUES
                                       ('2025-09-18', 'Fiestas Patrias'),
+                                      ('2025-07-07', 'Feriado irrenunciable'),
                                       ('2025-12-25', 'Navidad');

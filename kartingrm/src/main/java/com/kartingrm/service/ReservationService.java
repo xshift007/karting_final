@@ -7,6 +7,7 @@ import com.kartingrm.entity.Participant;
 import com.kartingrm.entity.Reservation;
 import com.kartingrm.entity.Session;
 import com.kartingrm.entity.ReservationStatus;
+import com.kartingrm.repository.PaymentRepository;
 import com.kartingrm.repository.ReservationRepository;
 import com.kartingrm.repository.SessionRepository;
 import com.kartingrm.service.mail.MailService;
@@ -35,12 +36,14 @@ public class ReservationService {
     private final PricingService pricing;
     private final MailService mail;
     private final HolidayService holidayService;
+    private final PaymentRepository paymentRepo;
 
     private static final SecureRandom RND = new SecureRandom();
     private static final String ABC = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
     @Value("${kartingrm.default-session-capacity:15}")
     private int defaultCapacity;
+
 
     /* ---------------- crear ------------------------------------------------ */
     @Transactional
@@ -141,19 +144,37 @@ public class ReservationService {
         sessionSvc.notifyAvailabilityUpdate();
     }
 
+
+
+    /* ------------------------ eliminar COMPLETO --------------------------- */
     @Transactional
-    public void deleteReservation(Long id) {
-        Reservation r = findById(id);
+    public void deleteReservation(Long reservationId) {
+
+        Reservation r = findById(reservationId);
+
+        /* 1) revertir visita si estaba confirmada */
         if (r.getStatus() == ReservationStatus.CONFIRMED) {
             clients.decrementVisits(r.getClient());
         }
+
+        /* 2) eliminar pago (si existe FK) */
+        paymentRepo.deleteByReservationId(reservationId);
+
+        /* 3) borrar reserva (participants se eliminan por orphanRemoval) */
         reservationRepo.delete(r);
-        Long sessId = r.getSession().getId();
-        if (reservationRepo.participantsInSession(sessId) == 0) {
-            sessionSvc.delete(sessId);
+
+        /* 4) si la sesión quedó vacía la quitamos para mantener limpio el rack */
+        Long sessionId = r.getSession().getId();
+        if (reservationRepo.participantsInSession(sessionId) == 0) {
+            sessionRepo.deleteById(sessionId);
         }
+
+        /* 5) avisar a stream SSE */
         sessionSvc.notifyAvailabilityUpdate();
     }
+
+
+
 
     /* ---------------- helpers privados ------------------------------------ */
     /** REGULAR/WEEKEND/HOLIDAY debe cuadrar con la fecha elegida */
