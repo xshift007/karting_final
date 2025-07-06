@@ -106,4 +106,18 @@ class ReservationServiceTest {
         assertThat(r1.getReservationCode())
                 .isNotEqualTo(r2.getReservationCode());
     }
+
+    @Test
+    void specialDayMismatch_throws(){
+       ReservationRequestDTO bad = new ReservationRequestDTO(
+           "X", c.getId(),
+           LocalDate.of(2025, 9, 18), // feriado
+           LocalTime.of(15,0), LocalTime.of(15,30),
+           List.of(new ParticipantDTO("P","p@p",false)),
+           com.kartingrm.entity.SpecialDay.REGULAR,
+           RateType.LAP_10);
+       assertThatThrownBy(() -> svc.createReservation(bad))
+              .isInstanceOf(IllegalArgumentException.class)
+              .hasMessageContaining("SpecialDay");
+    }
 }
