@@ -3,6 +3,7 @@ package com.kartingrm.service.pricing;
 import com.kartingrm.entity.RateType;
 import com.kartingrm.entity.TariffConfig;
 import com.kartingrm.repository.TariffConfigRepository;
+import com.kartingrm.entity.SpecialDay;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -21,20 +22,34 @@ public class TariffService {
     private final TariffConfigRepository repo;
     private final com.kartingrm.service.HolidayService holidays;
 
-    public TariffConfig forDate(LocalDate date, RateType requested){
+    /* ---------- DTO de salida para front ---------- */
+    public record TariffResult(TariffConfig cfg, SpecialDay specialDay) {}
+
+    /** Devuelve precio minutos y si aplica WEEKEND / HOLIDAY. */
+    public TariffResult resolve(LocalDate date, RateType requested){
 
         boolean weekend = date.getDayOfWeek() == DayOfWeek.SATURDAY
-                || date.getDayOfWeek() == DayOfWeek.SUNDAY;
+                       || date.getDayOfWeek() == DayOfWeek.SUNDAY;
         boolean holiday = holidays.isHoliday(date);
 
-        if (!weekend && !holiday)
-            return repo.findById(requested).orElseThrow();
+        SpecialDay sd = holiday ? SpecialDay.HOLIDAY :
+                       weekend ? SpecialDay.WEEKEND :
+                                 SpecialDay.REGULAR;
 
-        RateType special = holiday ? RateType.HOLIDAY : RateType.WEEKEND;
-        TariffConfig base       = repo.findById(requested).orElseThrow();
-        TariffConfig specialCfg = repo.findById(special).orElseThrow();
+        TariffConfig base = repo.findById(requested).orElseThrow();
+        if (sd == SpecialDay.REGULAR)
+            return new TariffResult(base, sd);
 
-        /* mismo rate - distinto precio */
-        return new TariffConfig(requested, specialCfg.getPrice(), base.getMinutes());
+        RateType surcharge = sd == SpecialDay.HOLIDAY ? RateType.HOLIDAY
+                                                      : RateType.WEEKEND;
+        TariffConfig extra = repo.findById(surcharge).orElseThrow();
+        return new TariffResult(
+                new TariffConfig(requested, extra.getPrice(), base.getMinutes()),
+                sd);
+    }
+
+    /* API previa: mantiene compatibilidad interna */
+    public TariffConfig forDate(LocalDate date, RateType requested){
+        return resolve(date, requested).cfg();
     }
 }

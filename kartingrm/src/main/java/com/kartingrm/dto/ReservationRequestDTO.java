@@ -2,12 +2,14 @@ package com.kartingrm.dto;
 
 import com.kartingrm.entity.RateType;
 import com.kartingrm.dto.UniqueEmails;
+import com.kartingrm.entity.SpecialDay;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import jakarta.validation.constraints.AssertTrue;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.DayOfWeek;
 import java.util.List;
 
 @UniqueEmails
@@ -27,7 +29,7 @@ public record ReservationRequestDTO(
         /* NUEVO: lista de participantes detallados */
         @Size(min = 1, max = 15, message = "Máximo 15 participantes")
         List<@Valid ParticipantDTO> participantsList,
-
+        SpecialDay specialDay,
         @NotNull RateType rateType
 ) {
     @AssertTrue(message = "La hora de término debe ser posterior a la de inicio")
@@ -51,4 +53,19 @@ public record ReservationRequestDTO(
             @NotBlank String fullName,
             @Email String email,
             boolean birthday){}
+
+    public SpecialDay specialDay(){ return specialDay; }
+
+    /* coherencia weekend / holiday */
+    @AssertTrue(message = "SpecialDay no coincide con la fecha")
+    public boolean isSpecialDayConsistent(){
+        if (specialDay == null) return true;               // retro-compatibilidad
+        boolean weekend = sessionDate.getDayOfWeek()==DayOfWeek.SATURDAY
+                       || sessionDate.getDayOfWeek()==DayOfWeek.SUNDAY;
+        boolean holiday = false; // ⇒ usar HolidayService en Service layer
+        SpecialDay real = holiday ? SpecialDay.HOLIDAY :
+                         weekend ? SpecialDay.WEEKEND :
+                                   SpecialDay.REGULAR;
+        return real == specialDay;
+    }
 }

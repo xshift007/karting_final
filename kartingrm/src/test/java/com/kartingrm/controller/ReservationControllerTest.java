@@ -52,7 +52,7 @@ class ReservationControllerTest {
                 LocalDate.of(2025,5,17),
                 LocalTime.of(10,0), LocalTime.of(10,30),
                 participants,
-                RateType.LAP_10);
+                null, RateType.LAP_10);
 
         Reservation saved = new Reservation();
         saved.setId(1L);
