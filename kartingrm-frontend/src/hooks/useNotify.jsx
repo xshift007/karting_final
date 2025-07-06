@@ -19,3 +19,17 @@ export function NotifyProvider({children}){
     </NotifyContext.Provider>
   )
 }
+
+/* helper de alto nivel – traduce códigos comunes */
+export function useApiErrorHandler() {
+  const notify = useNotify()
+  return err => {
+    const code = err.response?.data?.code
+    switch (code) {
+      case 'SESSION_OVERLAP':        return notify('Horario ocupado',       'error')
+      case 'CAPACITY_EXCEEDED':      return notify('Capacidad superada',    'error')
+      case 'SPECIAL_DAY_MISMATCH':   return notify('Tarifa especial (WE/HOL). Actualiza.', 'error')
+      default:                       return notify(err.response?.data?.message||err.message,'error')
+    }
+  }
+}
