@@ -5,4 +5,9 @@ const list   = cfg => http.get('/tariffs', cfg).then(r => r.data)
 const update = (rate, payload, cfg={}) =>
   http.put(`/tariffs/${rate}`, payload, cfg).then(r => r.data)
 
-export default { list, update }
+/** Consulta precio/minutos + clasificación WEEKEND/HOLIDAY/REGULAR */
+const preview = (date, rate, cfg = {}) =>
+  http.get('/tariffs/preview', { params: { date, rate }, ...cfg })
+      .then(r => r.data)
+
+export default { list, update, preview }

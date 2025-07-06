@@ -7,11 +7,11 @@ import * as yup from 'yup'
 import dayjs from 'dayjs'
 import {
   TextField, Button, Stack, Paper, Typography,
-  MenuItem, IconButton, Alert, Snackbar,
+  MenuItem, IconButton, Alert, Snackbar, Chip,
   CircularProgress
 } from '@mui/material'
 import { AddCircle, RemoveCircle } from '@mui/icons-material'
-import { useNotify } from '../hooks/useNotify'
+import { useNotify, useApiErrorHandler } from '../hooks/useNotify'
 
 import reservationService from '../services/reservation.service'
 import clientService      from '../services/client.service'
@@ -117,12 +117,27 @@ export default function ReservationForm({ edit = false }){
   })
 
   const notify = useNotify()
+  const apiError = useApiErrorHandler()
   const [toast,setToast] = useState({open:false,msg:'',severity:'success'})
+
+  /*  Pre-cálculo de tarifa y tipo de día  */
+  const [tariffInfo, setTariffInfo] =
+        useState({ price: 0, minutes: 0, specialDay: 'REGULAR' })
 
   /* ---- watchers útiles ---- */
   const sessionDate = watch('sessionDate')
   const startTime   = watch('startTime')
   const rateType    = watch('rateType')
+
+  /*  Cada vez que cambian fecha o tarifa ⇒ consultar preview  */
+  useEffect(() => {
+    if (!sessionDate || !rateType) return
+    tariffSvc.preview(
+        dayjs(sessionDate).format('YYYY-MM-DD'),
+        rateType)
+      .then(setTariffInfo)
+      .catch(console.error)
+  }, [sessionDate, rateType])
 
   /* ---------- mapas precio / duración ---------- */
   const { priceMap, durMap } = useMemo(
@@ -198,15 +213,16 @@ export default function ReservationForm({ edit = false }){
         return
       }
 
-      const promise = edit ? reservationService.update(id, data)
-                           : reservationService.create(data)
+      const payload = { ...data, specialDay: tariffInfo.specialDay }
+      const promise = edit ? reservationService.update(id, payload)
+                           : reservationService.create(payload)
       const res = await promise
 
       notify(`Reserva ${edit ? 'actualizada' : 'creada'} ✅`,'success')
 
       navigate(`/payments/${res.id}`,{ replace:true })
-    }catch{
-      // No es necesario hacer nada aquí, el interceptor global se encarga.
+    }catch(e){
+      apiError(e)
     }
   }
 
@@ -292,6 +308,14 @@ export default function ReservationForm({ edit = false }){
               </TextField>
             )}
           />
+
+          {/*  Muestra info devuelta por backend  */}
+          <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
+            <Chip label={`$${tariffInfo.price.toLocaleString()}`} />
+            <Chip label={`${tariffInfo.minutes} min`} />
+            {tariffInfo.specialDay !== 'REGULAR' &&
+              <Chip color="warning" label={tariffInfo.specialDay} />}
+          </Stack>
 
           {/* ---------- hora fin ---------- */}
             <Controller name="endTime" control={control}
