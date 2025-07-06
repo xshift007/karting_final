@@ -20,7 +20,9 @@ public class RestExceptionHandler {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiError> handleValidation(MethodArgumentNotValidException ex){
         boolean sd = ex.getFieldErrors().stream()
-                .anyMatch(f -> f.getDefaultMessage().contains("SpecialDay"));
+                .anyMatch(f -> f.getDefaultMessage()
+                        .toLowerCase()
+                        .contains("specialday"));
         return ResponseEntity.badRequest()
                 .body(new ApiError(sd ? "SPECIAL_DAY_MISMATCH" : "BAD_REQUEST",
                         ex.getFieldErrors().get(0).getDefaultMessage()));
