@@ -6,7 +6,8 @@ import {
   Paper, Button, Stack, Typography, CircularProgress, Box
 } from '@mui/material'
 import reservationService from '../services/reservation.service'
-import { useNotify, useApiErrorHandler } from '../hooks/useNotify'
+import { useNotify } from '../hooks/useNotify'
+import { useApiErrorHandler } from '../hooks/useApiErrorHandler'   /* ← corregido */
 import ConfirmDialog from '../components/ConfirmDialog'
 
 export default function ReservationsList() {
