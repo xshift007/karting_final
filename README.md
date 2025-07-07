@@ -9,6 +9,14 @@ Karting Final is a reservation management system for a go-kart track. The reposi
 
 The backend exposes endpoints for managing clients, karts, sessions, reservations and payments. It also generates PDF receipts and several income reports. The frontend consumes these APIs to provide an administration interface.
 
+## Key features
+
+- CRUD operations for karts, clients and sessions
+- Reservation management with capacity checks
+- Payment processing with PDF receipt generation
+- Income reports and Prometheus metrics
+- Email notifications when reservations are confirmed
+
 ---
 
 ## Repository layout
@@ -44,6 +52,11 @@ Each module can be worked on independently as described below.
    mvn package
    java -jar target/kartingrm-0.0.1-SNAPSHOT.jar
    ```
+5. **Running tests**
+   ```bash
+   mvn test
+   ```
+   Unit tests validate the service layer.
 
 ---
 
@@ -62,6 +75,7 @@ Each module can be worked on independently as described below.
    npm run build
    ```
    The static site is generated in `kartingrm-frontend/dist/` and can be served with any web server.
+   Set `VITE_BACKEND_API_URL` during build if the backend is hosted elsewhere.
 
 ---
 
@@ -69,5 +83,6 @@ Each module can be worked on independently as described below.
 
 - Some features send email notifications. Credentials for the SMTP account are read from `src/main/resources/application.properties`. The `secrets` directory can be used to store sensitive values locally.
 - Metrics are exposed through the Spring Boot actuator and Prometheus registry.
+- The server port and default session capacity can be changed using the environment variables `SERVER_PORT` and `KARTINGRM_DEFAULT_SESSION_CAPACITY`.
 
 With both services running you can manage reservations, monitor session availability and issue payments directly from the web UI.
