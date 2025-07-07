@@ -15,6 +15,7 @@ import { useHotkeys } from 'react-hotkeys-hook'
 const WeeklyRack       = lazy(() => import('./pages/WeeklyRack'))
 const ReservationForm  = lazy(() => import('./pages/ReservationForm'))
 const ReservationsList = lazy(() => import('./pages/ReservationsList'))
+const SessionReservations = lazy(() => import('./pages/SessionReservations')) // ← nuevo
 const ReportCharts     = lazy(() => import('./pages/ReportCharts'))
 const ReportTable      = lazy(() => import('./pages/ReportTable'))
 const ClientsCrud      = lazy(() => import('./pages/ClientsCrud'))
@@ -51,6 +52,9 @@ export default function App() {
             <Route path="/reservations/new" element={<ReservationForm />} />
             <Route path="/reservations/:id/edit" element={<ReservationForm edit />} />
             <Route path="/reservations" element={<ReservationsList />} />
+            {/* vista detalle por sesión (front-only) */}
+            <Route path="/sessions/:sessionId/reservations"
+                   element={<SessionReservations />} />
             <Route path="/payments/:reservationId" element={<PaymentPage />} />
             <Route path="/clients" element={<ClientsCrud />} />
             <Route path="/reports" element={<ReportCharts />} />

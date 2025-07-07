@@ -51,14 +51,15 @@ export default function WeeklyRack({ onCellClickAdmin }) {
   )
 
   const handleCellClick = (ses) => {
-    if (!ses) return
-    if (onCellClickAdmin) {
-      onCellClickAdmin(ses.sessionDate, ses.startTime, ses.endTime)
-      return
+      if (!ses) return
+      /* si YA hay reservas ⇒ ir al detalle                         */
+      if (ses.participantsCount > 0) {
+        navigate(`/sessions/${ses.id}/reservations`)
+        return
+      }
+      /* si aún hay cupo ⇒ flujo normal para crear                 */
+      navigate(`/reservations/new?d=${ses.sessionDate}&s=${ses.startTime}&e=${ses.endTime}`)
     }
-    navigate(`/reservations/new?d=${ses.sessionDate}&s=${ses.startTime}&e=${ses.endTime}`)
-  }
-
   const rangeLabel = `${format(monday, 'dd MMM')} – ${format(addDays(monday, 6), 'dd MMM yyyy')}`
 
   /* ------------------- JSX ------------------------------ */
