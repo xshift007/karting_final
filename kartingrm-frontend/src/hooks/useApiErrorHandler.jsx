@@ -7,15 +7,14 @@ import { useNotify } from './useNotify'
  */
 export const useApiErrorHandler = () => {
   const notify = useNotify()
-
-  return (err) => {
+  return err => {
     const msg =
-      err?.response?.data?.message ??
-      err?.response?.data?.error   ??
+      err?.response?.data?.message ||
+      err?.response?.data?.error ||
       err.message
 
-    /* Ejemplo de personalización */
-    if (/capacidad|overlap/i.test(msg)) {
+    // mapea mensajes conocidos
+    if (/Capacidad|Overlap/i.test(msg)) {
       notify('Capacidad de la sesión superada', 'error')
     } else {
       notify(msg, 'error')
