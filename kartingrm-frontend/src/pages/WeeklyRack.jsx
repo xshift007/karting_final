@@ -1,5 +1,5 @@
 // src/pages/WeeklyRack.jsx
-// Navegación semanal (anterior/actual/siguiente) añadida
+// Navegación semanal (anterior/actual/siguiente) + click-to-form si hay cupos
 import React, { useEffect, useState, useMemo, useCallback } from 'react'
 import {
   Table, TableHead, TableBody, TableRow, TableCell,
@@ -19,7 +19,7 @@ export default function WeeklyRack({ onCellClickAdmin }) {
   const [monday, setMonday] = useState(() =>
     startOfWeek(new Date(), { weekStartsOn: 1 }))
   const [rack, setRack] = useState({})
-  const [sel, setSel] = useState(null)
+  const [sel,  setSel]  = useState(null)
 
   const from = format(monday, 'yyyy-MM-dd')
   const to   = format(addDays(monday, 6), 'yyyy-MM-dd')
@@ -31,9 +31,7 @@ export default function WeeklyRack({ onCellClickAdmin }) {
       .catch(err => { if (!signal?.aborted) console.error(err) })
   }, [from, to])
 
-  const reload = useCallback(() => {
-    loadRack()
-  }, [loadRack])
+  const reload = useCallback(() => loadRack(), [loadRack])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -49,100 +47,118 @@ export default function WeeklyRack({ onCellClickAdmin }) {
   /* ----------------- filas de horas únicas --------------- */
   const slots = useMemo(() => {
     if (!rack || !Object.keys(rack).length) return []
-    return Array.from(new Set(Object.values(rack).flat()
-      .map(s => `${s.startTime}-${s.endTime}`)))
-      .sort((a, b) => a.localeCompare(b))
+    return Array.from(new Set(
+      Object.values(rack).flat().map(s => `${s.startTime}-${s.endTime}`)
+    )).sort((a, b) => a.localeCompare(b))
   }, [rack])
 
   /* ----------------- helpers UI -------------------------- */
   const cellColor = pct => (
-    pct === 1 ? 'error.main'
-      : pct >= 0.7 ? 'warning.main'
-        : 'success.main'
+    pct === 1 ? 'error.main' :
+    pct >= 0.7 ? 'warning.main' : 'success.main'
   )
 
-  const handleCellClick = (ses) => {
+  const handleCellClick = ses => {
     if (!ses) return
+
+    /* modo administrador */
     if (onCellClickAdmin) {
       onCellClickAdmin(ses.sessionDate, ses.startTime, ses.endTime)
       return
     }
-    setSel(ses.id)
+
+    /* modo estándar: abre detalle si está llena, o formulario si hay cupos */
+    const isFull = ses.participantsCount >= ses.capacity
+    if (isFull) {
+      setSel(ses.id)
+    } else {
+      navigate(
+        `/reservations/new?d=${ses.sessionDate}` +
+        `&s=${ses.startTime}&e=${ses.endTime}`
+      )
+    }
   }
 
-  const rangeLabel = `${format(monday, 'dd MMM')} – ${format(addDays(monday, 6), 'dd MMM yyyy')}`
+  const rangeLabel =
+    `${format(monday, 'dd MMM')} – ${format(addDays(monday, 6), 'dd MMM yyyy')}`
 
   /* ------------------- JSX ------------------------------ */
   return (
-    <Paper sx={{ p: 2, overflowX: 'auto' }}>
-      <Alert severity="info" sx={{ mb: 2 }}>
-        Horario de Atención:
-        <strong> Lunes–Viernes 14:00–22:00</strong> |
-        <strong> Sábados, Domingos y Feriados 10:00–22:00</strong>
-      </Alert>
+    <>
+      <Paper sx={{ p: 2, overflowX: 'auto' }}>
+        <Alert severity="info" sx={{ mb: 2 }}>
+          Horario de Atención:
+          <strong> Lunes–Viernes 14:00–22:00</strong> | 
+          <strong> Sábados, Domingos y Feriados 10:00–22:00</strong>
+        </Alert>
 
-      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
-        <Typography variant="h5">Disponibilidad ({rangeLabel})</Typography>
-        <Stack direction="row" spacing={1}>
-          <Button size="small" variant="outlined" onClick={() => setMonday(prev => addDays(prev, -7))}>« Anterior</Button>
-          <Button size="small" variant="outlined" onClick={() => setMonday(() => startOfWeek(new Date(), { weekStartsOn: 1 }))}>Hoy</Button>
-          <Button size="small" variant="outlined" onClick={() => setMonday(prev => addDays(prev, 7))}>Siguiente »</Button>
+        <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
+          <Typography variant="h5">Disponibilidad ({rangeLabel})</Typography>
+          <Stack direction="row" spacing={1}>
+            <Button size="small" variant="outlined" onClick={() => setMonday(prev => addDays(prev, -7))}>« Anterior</Button>
+            <Button size="small" variant="outlined" onClick={() => setMonday(startOfWeek(new Date(), { weekStartsOn: 1 }))}>Hoy</Button>
+            <Button size="small" variant="outlined" onClick={() => setMonday(prev => addDays(prev, 7))}>Siguiente »</Button>
+          </Stack>
         </Stack>
-      </Stack>
 
-      <Table size="small">
-        <TableHead>
-          <TableRow>
-            <TableCell sx={{ fontWeight: 'bold' }}>Hora</TableCell>
-            {DOW.map(d => (
-              <TableCell key={d} sx={{ fontWeight: 'bold', textAlign: 'center' }}>
-                {d.slice(0, 3)}
-              </TableCell>
-            ))}
-          </TableRow>
-        </TableHead>
+        <Table size="small">
+          <TableHead>
+            <TableRow>
+              <TableCell sx={{ fontWeight: 'bold' }}>Hora</TableCell>
+              {DOW.map(d => (
+                <TableCell key={d} sx={{ fontWeight: 'bold', textAlign: 'center' }}>
+                  {d.slice(0, 3)}
+                </TableCell>
+              ))}
+            </TableRow>
+          </TableHead>
 
-        <TableBody>
-          {slots.map(range => {
-            const [start, end] = range.split('-')
-            return (
-              <TableRow key={range}>
-                <TableCell sx={{ fontWeight: 500 }}>{range}</TableCell>
+          <TableBody>
+            {slots.map(range => {
+              const [start] = range.split('-')
+              return (
+                <TableRow key={range}>
+                  <TableCell sx={{ fontWeight: 500 }}>{range}</TableCell>
 
-                {DOW.map(d => {
-                  const ses = rack?.[d]?.find(s => s.startTime === start)
-                  if (!ses) return <TableCell key={d + range}></TableCell>
+                  {DOW.map(d => {
+                    const ses = rack?.[d]?.find(s => s.startTime === start)
+                    if (!ses) return <TableCell key={d + range} />
 
-                  const pct = ses.participantsCount / ses.capacity
-                  const isFull = pct === 1
-                  const label = `${ses.participantsCount}/${ses.capacity}`
+                    const pct   = ses.participantsCount / ses.capacity
+                    const label = `${ses.participantsCount}/${ses.capacity}`
 
-                  return (
-                    <TableCell key={d + range} sx={{ p: 0 }}>
-                      <Tooltip title={`Reservados ${label}`}>
-                        <Box
-                          sx={{
-                            bgcolor: cellColor(pct),
-                            color: '#fff',
-                            py: .5,
-                            cursor: 'pointer',
-                            textAlign: 'center',
-                            '&:hover': { opacity: .8 }
-                          }}
-                          onClick={() => handleCellClick(ses)}
-                        >
-                          {label}
-                        </Box>
-                      </Tooltip>
-                    </TableCell>
-                  )
-                })}
-              </TableRow>
-            )
-          })}
-        </TableBody>
-      </Table>
-    </Paper>
-    <ReservationDetailsDialog id={sel} open={!!sel} onClose={()=>setSel(null)} />
+                    return (
+                      <TableCell key={d + range} sx={{ p: 0 }}>
+                        <Tooltip title={`Reservados ${label}`}>
+                          <Box
+                            sx={{
+                              bgcolor: cellColor(pct),
+                              color: '#fff',
+                              py: .5,
+                              cursor: 'pointer',
+                              textAlign: 'center',
+                              '&:hover': { opacity: .8 }
+                            }}
+                            onClick={() => handleCellClick(ses)}
+                          >
+                            {label}
+                          </Box>
+                        </Tooltip>
+                      </TableCell>
+                    )
+                  })}
+                </TableRow>
+              )
+            })}
+          </TableBody>
+        </Table>
+      </Paper>
+
+      <ReservationDetailsDialog
+        id={sel}
+        open={Boolean(sel)}
+        onClose={() => setSel(null)}
+      />
+    </>
   )
 }
