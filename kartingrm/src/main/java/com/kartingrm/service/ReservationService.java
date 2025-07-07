@@ -81,12 +81,12 @@ public class ReservationService {
         var pr = pricing.calculate(dto);
         Reservation r = reservationRepo.save(buildEntity(dto, s, pr, code));
         sessionSvc.notifyAvailabilityUpdate();
-        //TransactionSynchronizationManager.registerSynchronization(
-        //        new TransactionSynchronization() {
-        //            @Override public void afterCommit() {
-        //               mail.sendConfirmation(r);
-        //            }
-        //        });
+        TransactionSynchronizationManager.registerSynchronization(
+                new TransactionSynchronization() {
+                    @Override public void afterCommit() {
+                       mail.sendConfirmation(r);
+                    }
+                });
         return r;
     }
 
