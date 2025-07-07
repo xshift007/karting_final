@@ -1,73 +1,80 @@
 # Karting Final
 
-*Para la versión en español consulta [README.es.md](README.es.md).* 
+Karting Final es un sistema de gestion de reservas para una pista de karts. Este repositorio contiene dos modulos principales:
 
-Karting Final is a reservation management system for a go-kart track. The repository is split in two main modules:
+- **kartingrm** – API REST desarrollada con Spring Boot.
+- **kartingrm-frontend** – Aplicacion SPA en React utilizando Vite.
 
-- **kartingrm** – Spring Boot REST API written in Java.
-- **kartingrm-frontend** – React SPA powered by Vite.
-
-The backend exposes endpoints for managing clients, karts, sessions, reservations and payments. It also generates PDF receipts and several income reports. The frontend consumes these APIs to provide an administration interface.
+El backend ofrece endpoints para gestionar clientes, karts, sesiones, reservas y pagos. Tambien genera recibos en PDF e informes de ingresos. El frontend consume dichas APIs para brindar una interfaz de administracion.
 
 ---
 
-## Repository layout
+## Estructura del repositorio
 
 ```
 ./
-├── kartingrm             # Spring Boot backend
-├── kartingrm-frontend    # React frontend
-└── secrets               # local files such as mail credentials
+├── kartingrm             # Backend Spring Boot
+├── kartingrm-frontend    # Frontend React
+└── secrets               # Archivos locales (ej. credenciales de correo)
 ```
 
-Each module can be worked on independently as described below.
+Cada modulo puede trabajarse de forma independiente como se describe a continuacion.
 
 ---
 
 ## Backend (kartingrm)
 
-1. **Prerequisites**
+1. **Requisitos previos**
    - Java 17
    - Maven
-   - MySQL available locally
-2. **Configuration**
-   - Create a database named `kartingrm` accessible at `localhost:3306`.
-   - Default credentials are `root/password` but can be overridden using the environment variables `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME` and `SPRING_DATASOURCE_PASSWORD` or by editing `src/main/resources/application.properties`.
-3. **Running in development**
+   - MySQL disponible localmente
+2. **Configuracion**
+   - Crear una base de datos llamada `kartingrm` accesible en `localhost:3306`.
+   - Las credenciales por defecto son `root/password`, pero pueden modificarse mediante las variables de entorno `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME` y `SPRING_DATASOURCE_PASSWORD` o editando `src/main/resources/application.properties`.
+3. **Ejecucion en desarrollo**
    ```bash
    cd kartingrm
    mvn spring-boot:run
    ```
-   The API will be available on [http://localhost:8080](http://localhost:8080).
-4. **Building a jar**
+   La API estara disponible en [http://localhost:8080](http://localhost:8080).
+4. **Generar un jar**
    ```bash
    mvn package
    java -jar target/kartingrm-0.0.1-SNAPSHOT.jar
    ```
+5. **Pruebas**
+   ```bash
+   mvn test
+   ```
+   Se incluyen pruebas unitarias para los servicios principales.
 
 ---
 
 ## Frontend (kartingrm-frontend)
 
-1. **Prerequisites** – Node.js 20
-2. **Running in development**
+1. **Requisitos previos** – Node.js 20
+2. **Ejecucion en desarrollo**
    ```bash
    cd kartingrm-frontend
    npm install
    npm run dev
    ```
-   The development server runs on [http://localhost:5173](http://localhost:5173) and proxies API requests to `http://localhost:8080`. Set the variable `VITE_BACKEND_API_URL` if your backend runs elsewhere.
-3. **Building for production**
+   El servidor de desarrollo se ejecuta en [http://localhost:5173](http://localhost:5173) y redirige las peticiones a la API en `http://localhost:8080`. Puedes establecer `VITE_BACKEND_API_URL` si el backend se ejecuta en otra direccion.
+3. **Compilacion para produccion**
    ```bash
    npm run build
    ```
-   The static site is generated in `kartingrm-frontend/dist/` and can be served with any web server.
+   Los archivos estaticos se generan en `kartingrm-frontend/dist/` y pueden servirse con cualquier servidor web.
+4. **Revision de estilo**
+   ```bash
+   npm run lint
+   ```
 
 ---
 
-## Additional notes
+## Notas adicionales
 
-- Some features send email notifications. Credentials for the SMTP account are read from `src/main/resources/application.properties`. The `secrets` directory can be used to store sensitive values locally.
-- Metrics are exposed through the Spring Boot actuator and Prometheus registry.
+- Algunas funcionalidades envian notificaciones por correo electronico. Las credenciales SMTP se leen de `src/main/resources/application.properties`; puedes utilizar la carpeta `secrets` para almacenarlas localmente.
+- El sistema expone metricas mediante el actuator de Spring Boot y Prometheus.
+- Con ambos servicios en funcionamiento podras gestionar las reservas, monitorizar la disponibilidad de las sesiones y registrar pagos desde la interfaz web.
 
-With both services running you can manage reservations, monitor session availability and issue payments directly from the web UI.
