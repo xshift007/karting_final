@@ -10,8 +10,11 @@ import {
   MenuItem, IconButton, Alert, Snackbar, Chip,
   CircularProgress
 } from '@mui/material'
+import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers'
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
 import { AddCircle, RemoveCircle } from '@mui/icons-material'
-import { useNotify, useApiErrorHandler } from '../hooks/useNotify'
+import { useNotify } from '../hooks/useNotify'
+import { useApiErrorHandler } from '../hooks/useApiErrorHandler'
 
 import reservationService from '../services/reservation.service'
 import clientService      from '../services/client.service'
@@ -24,11 +27,14 @@ const fmt = d => dayjs(d).format('YYYY-MM-DD')
 
 /* ---------------- esquema ---------------- */
 const schema = z.object({
-  clientId   : z.coerce.number().min(1, "Selecciona un cliente"),
-  sessionDate: z.coerce.date().min(dayjs().startOf("day").toDate(), "Fecha en el futuro"),
+  clientId   : z.coerce.number().min(1, 'Selecciona un cliente'),
+  sessionDate: z.date().min(dayjs().startOf('day').toDate()),
   startTime  : z.string(),
   endTime    : z.string(),
-}).refine(d => dayjs(d.endTime,"HH:mm").isAfter(dayjs(d.startTime,"HH:mm")), { message:"La hora de término debe ser posterior" })
+}).refine(d => dayjs(d.endTime,'HH:mm').isAfter(d.startTime), {
+  path: ['endTime'],
+  message: 'Hora fin > inicio'
+})
 
 export default function ReservationForm({ edit = false }){
 
@@ -50,7 +56,7 @@ export default function ReservationForm({ edit = false }){
     mode     : 'onChange',
     defaultValues:{
       clientId        : '',
-      sessionDate     : dayjs().format('YYYY-MM-DD'),
+      sessionDate     : dayjs().toDate(),
       startTime       : '',
       endTime         : '',
       participantsList:[{ fullName:'', email:'', birthday:false }],
@@ -94,7 +100,7 @@ export default function ReservationForm({ edit = false }){
   /* 1) prefills desde la URL (?d, ?s, ?e) */
   useEffect(()=>{
     const p = new URLSearchParams(location.search)
-    p.get('d') && setValue('sessionDate', p.get('d'))
+    p.get('d') && setValue('sessionDate', dayjs(p.get('d')).toDate())
     p.get('s') && setValue('startTime',  p.get('s'))
     p.get('e') && setValue('endTime',    p.get('e'))
   },[location.search, setValue])
@@ -104,7 +110,7 @@ export default function ReservationForm({ edit = false }){
       reservationService.get(id).then(res => {
         const { client, session, participantsList, rateType } = res.data
         setValue('clientId', client.id)
-        setValue('sessionDate', session.sessionDate)
+        setValue('sessionDate', dayjs(session.sessionDate).toDate())
         setValue('startTime', session.startTime)
         setValue('endTime', session.endTime)
         setValue('rateType', rateType)
@@ -209,10 +215,16 @@ export default function ReservationForm({ edit = false }){
           {/* ---------- fecha ---------- */}
             <Controller name="sessionDate" control={control}
               render={({ field }) => (
-                <TextField {...field} id={field.name} type="date" label="Fecha"
-                  InputLabelProps={{shrink:true}}
-                error={!!errors.sessionDate}
-                helperText={errors.sessionDate?.message}/>
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                  <DatePicker
+                    {...field}
+                    label="Fecha"
+                    value={dayjs(field.value)}
+                    minDate={dayjs()}
+                    onChange={d => field.onChange(d ? d.toDate() : null)}
+                    slotProps={{ textField:{ error:!!errors.sessionDate, helperText:errors.sessionDate?.message } }}
+                  />
+                </LocalizationProvider>
             )}
           />
 

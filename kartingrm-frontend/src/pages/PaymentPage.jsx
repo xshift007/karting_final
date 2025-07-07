@@ -2,7 +2,8 @@ import React, { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Paper, Typography, Button, Stack, CircularProgress } from '@mui/material'
 import paymentService from '../services/payment.service'
-import { useNotify, useApiErrorHandler } from '../hooks/useNotify'
+import { useNotify } from '../hooks/useNotify'
+import { useApiErrorHandler } from '../hooks/useApiErrorHandler'
 
 export default function PaymentPage() {
   const { reservationId } = useParams()

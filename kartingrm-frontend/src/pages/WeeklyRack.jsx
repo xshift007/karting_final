@@ -61,19 +61,24 @@ export default function WeeklyRack({ onCellClickAdmin }) {
         : 'success.main'
   )
 
-  const handleCellClick = (ses) => {
+  const handleCellClick = ses => {
     if (!ses) return
+    // modo admin (editar sesión)
     if (onCellClickAdmin) {
       onCellClickAdmin(ses.sessionDate, ses.startTime, ses.endTime)
       return
     }
-    setSel(ses.id)
+    const full = ses.participantsCount === ses.capacity
+    full
+      ? setSel(ses.id) // mostrar detalles
+      : navigate(`/reservations/new?d=${ses.sessionDate}&s=${ses.startTime}&e=${ses.endTime}`)
   }
 
   const rangeLabel = `${format(monday, 'dd MMM')} – ${format(addDays(monday, 6), 'dd MMM yyyy')}`
 
   /* ------------------- JSX ------------------------------ */
   return (
+    <>
     <Paper sx={{ p: 2, overflowX: 'auto' }}>
       <Alert severity="info" sx={{ mb: 2 }}>
         Horario de Atención:
@@ -104,7 +109,7 @@ export default function WeeklyRack({ onCellClickAdmin }) {
 
         <TableBody>
           {slots.map(range => {
-            const [start, end] = range.split('-')
+            const [start] = range.split('-')
             return (
               <TableRow key={range}>
                 <TableCell sx={{ fontWeight: 500 }}>{range}</TableCell>
@@ -114,7 +119,6 @@ export default function WeeklyRack({ onCellClickAdmin }) {
                   if (!ses) return <TableCell key={d + range}></TableCell>
 
                   const pct = ses.participantsCount / ses.capacity
-                  const isFull = pct === 1
                   const label = `${ses.participantsCount}/${ses.capacity}`
 
                   return (
@@ -144,5 +148,6 @@ export default function WeeklyRack({ onCellClickAdmin }) {
       </Table>
     </Paper>
     <ReservationDetailsDialog id={sel} open={!!sel} onClose={()=>setSel(null)} />
+    </>
   )
 }
