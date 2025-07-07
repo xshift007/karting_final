@@ -2,6 +2,7 @@
 import React, { useEffect, useState, useMemo } from 'react'
 import { useNavigate, useLocation, useParams } from 'react-router-dom'
 import { useForm, useFieldArray, Controller } from 'react-hook-form'
+import { useQueryClient } from '@tanstack/react-query'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import dayjs from 'dayjs'
@@ -22,10 +23,9 @@ import reservationService from '../services/reservation.service'
 import clientService      from '../services/client.service'
 import sessionService     from '../services/session.service'
 import tariffSvc          from '../services/tariff.service'
-import { computePrice, buildTariffMaps, addMinutes, ensureSeconds } from '../helpers'
+import { computePrice, buildTariffMaps, addMinutes, ensureSeconds, fmtDate } from '../helpers'
 
 const RATE_TYPES = ['LAP_10','LAP_15','LAP_20']
-const fmt = d => dayjs(d).format('YYYY-MM-DD')
 
 /* ---------------- esquema ---------------- */
 const schema = z.object({
@@ -44,6 +44,7 @@ export default function ReservationForm({ edit = false }){
   const navigate = useNavigate()
   const location = useLocation()
   const { id } = useParams()
+  const queryClient = useQueryClient()
 
   /* ------------ estado auxiliar ------------ */
   const [clients,  setClients]  = useState([])
@@ -88,7 +89,7 @@ export default function ReservationForm({ edit = false }){
   useEffect(() => {
     if (!sessionDate || !rateType) return
     tariffSvc.preview(
-        dayjs(sessionDate).format('YYYY-MM-DD'),
+        fmtDate(sessionDate),
         rateType)
       .then(p => {
         setPreview(p)
@@ -152,7 +153,7 @@ export default function ReservationForm({ edit = false }){
     try{
       /* ---- VALIDAR AFORO ---- */
       const { sessionDate, startTime, endTime, participantsList } = data
-      const { data: week } = await sessionService.weekly(fmt(sessionDate), fmt(sessionDate))
+      const { data: week } = await sessionService.weekly(fmtDate(sessionDate), fmtDate(sessionDate))
       const slot = Object.values(week).flat()
                       .find(s => s.startTime===startTime && s.endTime===endTime)
       if (slot && slot.participantsCount + participantsList.length > slot.capacity){
@@ -162,7 +163,7 @@ export default function ReservationForm({ edit = false }){
 
       const payload = {
         ...data,
-        sessionDate: fmt(data.sessionDate),
+        sessionDate: fmtDate(data.sessionDate),
         startTime: ensureSeconds(data.startTime),
         endTime  : ensureSeconds(data.endTime || addMinutes(data.startTime, minutes)),
         specialDay: preview?.specialDay,
@@ -172,6 +173,8 @@ export default function ReservationForm({ edit = false }){
       const res = await promise
 
       notify(`Reserva ${edit ? 'actualizada' : 'creada'} ✅`,'success')
+      queryClient.invalidateQueries({ queryKey:['reservations'] })
+      window.dispatchEvent(new CustomEvent('availabilityUpdated'))
 
       navigate(`/payments/${res.id}`,{ replace:true })
     }catch(e){
