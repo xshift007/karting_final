@@ -102,5 +102,7 @@ export function computePrice({
 }
 
 
-import dayjs from 'dayjs';
-export const fmtDate = d => dayjs(d).format('YYYY-MM-DD');   // «2025-07-07»
+import dayjs from 'dayjs'
+// Devuelve fecha «YYYY-MM-DD» sin tocar strings ya formateados
+export const fmtDate = d =>
+  typeof d === 'string' ? d : dayjs(d).format('YYYY-MM-DD')

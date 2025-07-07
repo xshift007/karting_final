@@ -16,8 +16,8 @@ export default function PaymentPage() {
   const handlePay = async () => {
     setLoading(true)
     try {
-      const { data:{ id } } = await paymentService.pay({ reservationId, method:'cash' })
-      const pdf = await paymentService.receipt(id)
+      const { data:{ id:paymentId } } = await paymentService.pay({ reservationId, method:'cash' })
+      const pdf = await paymentService.receipt(paymentId)
       const blob = new Blob([pdf.data],{ type:'application/pdf' })
       const url  = window.URL.createObjectURL(blob)
       const win  = window.open(url,'_blank','noopener')
