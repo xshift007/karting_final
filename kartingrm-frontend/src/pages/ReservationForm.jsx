@@ -154,7 +154,7 @@ export default function ReservationForm({ edit = false }){
       const { sessionDate, startTime, endTime, participantsList } = data
       const { data: week } = await sessionService.weekly(fmt(sessionDate), fmt(sessionDate))
       const slot = Object.values(week).flat()
-                    .find(s => s.startTime===startTime && s.endTime===endTime)
+                      .find(s => s.startTime===startTime && s.endTime===endTime)
       if (slot && slot.participantsCount + participantsList.length > slot.capacity){
         notify('La sesión ya está completa ❌','error')
         return
@@ -162,6 +162,7 @@ export default function ReservationForm({ edit = false }){
 
       const payload = {
         ...data,
+        sessionDate: fmt(data.sessionDate),
         startTime: ensureSeconds(data.startTime),
         endTime  : ensureSeconds(data.endTime || addMinutes(data.startTime, minutes)),
         specialDay: preview?.specialDay,

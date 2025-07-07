@@ -100,3 +100,7 @@ export function computePrice({
     final: Math.round(finalPrice)
   }
 }
+
+
+import dayjs from 'dayjs';
+export const fmtDate = d => dayjs(d).format('YYYY-MM-DD');   // «2025-07-07»
