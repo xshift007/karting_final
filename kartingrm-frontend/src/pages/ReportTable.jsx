@@ -1,28 +1,31 @@
 import { useState } from 'react';
 import {
   Table, TableHead, TableBody, TableRow, TableCell,
-  Paper, Typography, Button, Stack
+  Paper, Typography, Button, Stack, TextField, Alert
 } from '@mui/material';
 import reportService from '../services/report.service';
 import dayjs from 'dayjs';
+import { useNotify } from '../hooks/useNotify';
 
 const monthName = n => dayjs().month(n - 1).format('MMMM');
 
 export default function ReportTable() {
-  const from = dayjs().startOf('year').format('YYYY-MM-DD');
-  const to   = dayjs().endOf('year').format('YYYY-MM-DD');
+  const notify = useNotify()
+  const [from, setFrom] = useState(dayjs().startOf('year').format('YYYY-MM-DD'))
+  const [to,   setTo]   = useState(dayjs().endOf('year').format('YYYY-MM-DD'))
 
-  const [rateData, setRateData]   = useState([]);
-  const [groupData, setGroupData] = useState([]);
+  const [rateData, setRateData]   = useState([])
+  const [groupData, setGroupData] = useState([])
 
   const load = async () => {
+    if (dayjs(from).isAfter(to)) return notify('Rango inválido','error')
     const [r1, r2] = await Promise.all([
       reportService.byRateMonthly(from, to),
       reportService.byGroupMonthly(from, to)
-    ]);
-    setRateData(r1.data);
-    setGroupData(r2.data);
-  };
+    ])
+    setRateData(r1.data)
+    setGroupData(r2.data)
+  }
 
   const monthNums = Array.from(new Set(rateData.map(d => d.month)))
     .sort((a,b)=> a - b);
@@ -46,7 +49,14 @@ export default function ReportTable() {
   return (
     <Paper sx={{ p:3, maxWidth:800, mx:'auto' }}>
       <Stack spacing={2}>
-        <Button variant="contained" onClick={load}>Cargar reporte mensual</Button>
+        <Stack direction="row" spacing={2}>
+          <TextField type="date" label="Desde" value={from} onChange={e=>setFrom(e.target.value)} />
+          <TextField type="date" label="Hasta" value={to} onChange={e=>setTo(e.target.value)} />
+          <Button variant="contained" onClick={load}>Cargar reporte mensual</Button>
+        </Stack>
+        {!rateData.length && !groupData.length && (
+          <Alert severity="info">Sin ingresos en este período</Alert>
+        )}
 
         <Typography variant="h6">Ingresos por Tarifa</Typography>
         <Table size="small">
