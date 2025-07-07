@@ -1,108 +1,114 @@
-// ⚠️ Reemplaza TODO el archivo helpers.js
+// kartingrm-frontend/src/helpers.js
 // ──────────────────────────────────────────────────────────
-//  Utilities de fecha / hora de uso transversal
+//  Utilidades comunes de fechas, horas y precios
 // ──────────────────────────────────────────────────────────
+import dayjs from 'dayjs'
 
-/** Asegura formato HH:mm:ss (LocalTime default). */
+/* ---------- Fecha ---------- */
+export const fmtDate = (d) =>
+  typeof d === 'string' ? d : dayjs(d).format('YYYY-MM-DD')
+
+/* ---------- Tiempo (HH:mm:ss) ---------- */
+/** Convierte “14:30” → “14:30:00”. */
 export const ensureSeconds = (t) =>
-  t && t.length === 5               // «14:30»
-    ? `${t}:00`                     // «14:30:00»
-    : t;                            // ya trae segundos
+  t && t.length === 5 ? `${t}:00` : t
 
-/** Suma minutos a un string HH:mm[:ss] y devuelve HH:mm:ss */
+/** Suma `mins` minutos a HH:mm[:ss] y devuelve HH:mm:ss. */
 export const addMinutes = (timeStr, mins) => {
-  const [h = 0, m = 0, s = 0] = timeStr.split(':').map(Number);
-  const date = new Date(0, 0, 0, h, m, s);
-  date.setMinutes(date.getMinutes() + mins);
-  const pad = (x) => String(x).padStart(2, '0');
-  return `${pad(date.getHours())}:${pad(date.getMinutes())}:00`;
-};
+  const [h = 0, m = 0, s = 0] = timeStr.split(':').map(Number)
+  const date = new Date(0, 0, 0, h, m, s)
+  date.setMinutes(date.getMinutes() + mins)
+  const pad = (x) => String(x).padStart(2, '0')
+  return `${pad(date.getHours())}:${pad(date.getMinutes())}:00`
+}
+
+/* ---------- Tarifas ---------- */
 /**
- * Construye dos mapas (precio, minutos) a partir de la respuesta
- *     [{ rate:'LAP_10', price:15000, minutes:30 }, …]
+ * Devuelve dos mapas { rate: price } y { rate: minutes }
+ * a partir del array de tarifas recibido del backend.
  */
-export function buildTariffMaps(tariffs = []) {
+export const buildTariffMaps = (tariffs = []) => {
   const priceMap = {}
-  const durMap   = {}
-  tariffs.forEach(t => {
+  const durMap = {}
+  tariffs.forEach((t) => {
     priceMap[t.rate] = t.price
-    durMap[t.rate]   = t.minutes
+    durMap[t.rate] = t.minutes
   })
   return { priceMap, durMap }
 }
 
+/* ---------- Pricing (idéntico al backend) ---------- */
 /**
- * Cálculo idéntico al backend (descuentos secuenciales).
- *  · `prices` → mapa { rate : price }
+ * Calcula el precio final aplicando:
+ *   1) Descuento por grupo
+ *   2) Descuento cliente frecuente (solo titular)
+ *   3) 50 % a 1–2 cumpleañeros elegibles
+ *
+ * @param {Object} opts
+ * @param {string}  opts.rateType
+ * @param {number}  opts.participants           (1-15)
+ * @param {number}  opts.birthdayCount
+ * @param {number}  opts.visitsThisMonth
+ * @param {Object}  opts.prices                 mapa { rate : price }
+ * @param {boolean} [opts.ownerIsBirthday=false]
  */
-export function computePrice({
+export const computePrice = ({
   rateType,
   participants,
   birthdayCount = 0,
   visitsThisMonth = 0,
-  prices = {}
-}) {
+  prices = {},
+  ownerIsBirthday = false,
+}) => {
   const base = prices[rateType] ?? 0
 
-  // Descuento por grupo
-  const g =
+  /* — Descuento por tamaño de grupo — */
+  const groupDisc =
     participants <= 2 ? 0 :
     participants <= 5 ? 10 :
     participants <= 10 ? 20 : 30
 
-  // Descuento por cliente frecuente
-  const f =
+  /* — Descuento cliente frecuente — */
+  const freqDisc =
     visitsThisMonth >= 7 ? 30 :
     visitsThisMonth >= 5 ? 20 :
     visitsThisMonth >= 2 ? 10 : 0
 
-  // Cumpleañeros con descuento
-  const winners =
-    (birthdayCount === 1 && participants >= 3 && participants <= 5) ? 1 :
-    (birthdayCount >= 2 && participants >= 6 && participants <= 15) ? Math.min(2, birthdayCount) :
-    0
+  /* — Cumpleañeros con 50 % — */
+  const birthdayWinners =
+    participants < 3 ? 0 :
+    participants <= 5
+      ? Math.min(1, birthdayCount)
+      : Math.min(2, birthdayCount)
 
-  // Aplicar descuento de grupo al precio base
-  const priceAfterGroup = base * (1 - g / 100)
+  /* — Precios intermedios — */
+  const afterGroup = base * (1 - groupDisc / 100)
+  let ownerUnit = afterGroup * (1 - freqDisc / 100)
+  let winnersLeft = birthdayWinners
 
-  // Precio para el titular (con descuento de cliente frecuente)
-  const ownerPrice = priceAfterGroup * (1 - f / 100)
-
-  // Precio para los otros participantes
-  const regularPrice = priceAfterGroup
-
-  let finalPrice = 0
-  let winnersLeft = winners
-  let ownerIsBirthday = false // Esto debería venir de los datos del formulario
-
-  if (participants > 0) {
-    let currentOwnerPrice = ownerPrice
-    if (ownerIsBirthday && winnersLeft > 0) {
-      currentOwnerPrice *= 0.5
-      winnersLeft--
-    }
-    finalPrice += currentOwnerPrice
+  if (ownerIsBirthday && winnersLeft > 0) {
+    ownerUnit *= 0.5
+    winnersLeft--
   }
 
+  const regularUnit = afterGroup
   const othersCount = participants - 1
-  const othersPrice = regularPrice * (othersCount - winnersLeft) + (regularPrice * 0.5 * winnersLeft)
-  finalPrice += othersPrice
+  const othersPrice =
+    regularUnit * (othersCount - winnersLeft) +
+    regularUnit * 0.5 * winnersLeft
 
-  const totalWithoutDiscount = base * participants
-  const totalDiscount = totalWithoutDiscount > 0 ? ((totalWithoutDiscount - finalPrice) * 100) / totalWithoutDiscount : 0
+  const final = Math.round(ownerUnit + othersPrice)
+  const subtotal = base * participants
+  const totalDisc = subtotal
+    ? Number(((subtotal - final) * 100) / subtotal).toFixed(2)
+    : 0
 
   return {
     base,
-    discGroup: g,
-    discFreq: f,
-    discBirth: winners > 0 ? 50 : 0,
-    totalDisc: totalDiscount.toFixed(2),
-    final: Math.round(finalPrice)
+    discGroup: groupDisc,
+    discFreq: freqDisc,
+    discBirth: birthdayWinners > 0 ? 50 : 0,
+    totalDisc,
+    final,
   }
 }
-
-
-import dayjs from 'dayjs'
-// Devuelve fecha «YYYY-MM-DD» sin tocar strings ya formateados
-export const fmtDate = d =>
-  typeof d === 'string' ? d : dayjs(d).format('YYYY-MM-DD')
