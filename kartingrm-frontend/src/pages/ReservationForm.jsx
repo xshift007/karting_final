@@ -2,8 +2,8 @@
 import React, { useEffect, useState, useMemo } from 'react'
 import { useNavigate, useLocation, useParams } from 'react-router-dom'
 import { useForm, useFieldArray, Controller } from 'react-hook-form'
-import { yupResolver } from '@hookform/resolvers/yup'
-import * as yup from 'yup'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
 import dayjs from 'dayjs'
 import {
   TextField, Button, Stack, Paper, Typography,
@@ -23,65 +23,12 @@ const RATE_TYPES = ['LAP_10','LAP_15','LAP_20']
 const fmt = d => dayjs(d).format('YYYY-MM-DD')
 
 /* ---------------- esquema ---------------- */
-const schema = yup.object({
-  clientId        : yup.number().required('Cliente obligatorio'),
-  sessionDate     : yup.date().required('Fecha obligatoria'),
-  startTime       : yup.string()
-                        .required('Hora inicio obligatoria')
-                        .test('is-in-future', 'La hora de inicio no puede ser en el pasado', function(value) {
-                          const { sessionDate } = this.parent;
-                          // Solo aplica la validación cuando la reserva es para hoy
-                          if (dayjs(sessionDate).isSame(dayjs(), 'day')) {
-                            if (!value) {
-                              return true; // dejar que la validación 'required' actúye
-                            }
-                            // Construir la fecha y hora completas para compararlas con "ahora"
-                            const now = dayjs();
-                            const [hours, minutes] = value.split(':');
-                            const selectedDateTime = dayjs(sessionDate).hour(hours).minute(minutes);
-
-                            return selectedDateTime.isAfter(now);
-                          }
-                          return true;
-                        })
-                        .test('is-within-operating-hours', 'La hora de inicio está fuera del horario de atención', function(value) {
-                          const { sessionDate } = this.parent;
-                          if (!value || !sessionDate) {
-                            return true;
-                          }
-                          const day = dayjs(sessionDate).day();
-                          const isWeekendOrHoliday = day === 0 || day === 6; // Domingo:0, Sábado:6
-                          const [hours, minutes] = value.split(':').map(Number);
-                          const selectedTime = hours * 60 + minutes;
-                          if (isWeekendOrHoliday) {
-                            return selectedTime >= 10 * 60 && selectedTime < 22 * 60;
-                          }
-                          return selectedTime >= 14 * 60 && selectedTime < 22 * 60;
-                        }),
-  endTime         : yup.string()
-                        .required('Hora fin obligatoria')
-                        .test('is-after','Fin debe ser posterior',
-                              function (value){ return !value || value > this.parent.startTime })
-                        .test('is-before-closing', 'La hora de finalización no puede ser después de las 22:00', function(value) {
-                            if (!value) {
-                                return true;
-                            }
-                            const [hours, minutes] = value.split(":").map(Number);
-                            const selectedTime = hours * 60 + minutes;
-                            // Permite hasta las 22:00 inclusive
-                            return selectedTime <= 22 * 60;
-                        }),
-  participantsList: yup.array().of(
-                      yup.object({
-                        fullName: yup.string().required('Nombre obligatorio'),
-                        email   : yup.string().email('Email inválido')
-                                             .required('Email obligatorio'),
-                        birthday: yup.boolean()
-                      }))
-                    .min(1,'Al menos 1 participante')
-                    .max(15,'Máximo 15 participantes'),
-  rateType        : yup.string().required()
-})
+const schema = z.object({
+  clientId   : z.coerce.number().min(1, "Selecciona un cliente"),
+  sessionDate: z.coerce.date().min(dayjs().startOf("day").toDate(), "Fecha en el futuro"),
+  startTime  : z.string(),
+  endTime    : z.string(),
+}).refine(d => dayjs(d.endTime,"HH:mm").isAfter(dayjs(d.startTime,"HH:mm")), { message:"La hora de término debe ser posterior" })
 
 export default function ReservationForm({ edit = false }){
 
@@ -99,7 +46,7 @@ export default function ReservationForm({ edit = false }){
     control, setValue, handleSubmit, watch, trigger,
     formState:{ errors, isSubmitting }
   } = useForm({
-    resolver : yupResolver(schema),
+    resolver : zodResolver(schema),
     mode     : 'onChange',
     defaultValues:{
       clientId        : '',
@@ -128,23 +75,22 @@ export default function ReservationForm({ edit = false }){
   const startTime   = watch('startTime')
   const rateType    = watch('rateType')
 
-  /*  Cada vez que cambian fecha o tarifa ⇒ consultar preview  */
+  /*  Cada vez que cambian fecha o tarifa ⇒ consultar preview */
   useEffect(() => {
     if (!sessionDate || !rateType) return
     tariffSvc.preview(
         dayjs(sessionDate).format('YYYY-MM-DD'),
         rateType)
-      .then(setPreview)
+      .then(p => {
+        setPreview(p)
+        if(startTime){
+          setValue('endTime', dayjs(startTime, 'HH:mm').add(p.minutes,'minute').format('HH:mm'))
+        }
+      })
       .catch(handleError)
-  }, [sessionDate, rateType])
-
+  }, [sessionDate, rateType, startTime, setValue, handleError])
   /* ---------- mapas precio / duración ---------- */
-  const { priceMap, durMap } = useMemo(
-    () => buildTariffMaps(tariffs),
-    [tariffs]
-  )
-
-  /* ---------- efectos ---------- */
+  const priceMap = useMemo(() => buildTariffMaps(tariffs).priceMap, [tariffs])
   /* 1) prefills desde la URL (?d, ?s, ?e) */
   useEffect(()=>{
     const p = new URLSearchParams(location.search)
@@ -190,14 +136,6 @@ export default function ReservationForm({ edit = false }){
     }
   },[sessionDate, trigger, startTime])
 
-  /* 5) calcular hora fin automática */
-  useEffect(()=>{
-    if (!startTime || !rateType || !sessionDate) return
-    const mins = durMap[rateType] ?? 0
-    const end  = dayjs(`${sessionDate} ${startTime}`)
-                   .add(mins,'minute').format('HH:mm')
-    setValue('endTime', end, { shouldValidate:true, shouldDirty:true })
-  },[startTime, rateType, sessionDate, durMap, setValue])
 
   /* ---------- envío ---------- */
   const onSubmit = async data => {
@@ -298,8 +236,21 @@ export default function ReservationForm({ edit = false }){
               render={({ field }) => (
                 <TextField {...field} id={field.name} select label="Tipo de reserva"
                   value={field.value || ''}
-                error={!!errors.rateType}
-                helperText={errors.rateType?.message}>
+                  error={!!errors.rateType}
+                  helperText={errors.rateType?.message}
+                  onChange={async e => {
+                    field.onChange(e)
+                    try {
+                      const rate = e.target.value
+                      const p = await tariffSvc.preview(sessionDate, rate)
+                      setPreview(p)
+                      if(startTime){
+                        setValue('endTime', dayjs(startTime, 'HH:mm').add(p.minutes,'minute').format('HH:mm'))
+                      }
+                    } catch(err){
+                      handleError(err)
+                    }
+                  }}>
                 <MenuItem value="">Seleccione…</MenuItem>
                 {RATE_TYPES.map(r => (
                   <MenuItem key={r} value={r}>{r}</MenuItem>

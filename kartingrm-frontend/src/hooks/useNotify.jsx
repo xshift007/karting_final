@@ -25,12 +25,17 @@ export function useApiErrorHandler() {
   const notify = useNotify()
   return err => {
     const code = err.response?.data?.code
+    const msg  = err.response?.data?.message || err.message
     switch (code) {
       case 'SESSION_OVERLAP':   return notify('Horario ocupado','error')
       case 'CAPACITY_EXCEEDED': return notify('Capacidad superada','error')
       case 'SPECIAL_DAY_MISMATCH': return notify('Tarifa especial (WE/HOL). Actualiza.','error')
       case 'DUPLICATED_EMAIL':  return notify('Los e-mails deben ser únicos','error') // ⭐️
-      default: return notify(err.response?.data?.message || err.message,'error')
+      default:
+        if (msg.includes('Capacidad') || msg.includes('Overlap')) {
+          return notify('Capacidad de la sesión superada','error')
+        }
+        return notify(msg,'error')
     }
   }
 }

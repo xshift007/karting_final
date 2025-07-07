@@ -8,6 +8,7 @@ import {
 import sessionService from '../services/session.service'
 import { format, addDays, startOfWeek } from 'date-fns'
 import { useNavigate } from 'react-router-dom'
+import ReservationDetailsDialog from '../components/ReservationDetailsDialog'
 
 const DOW = ['MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY','SUNDAY']
 
@@ -18,6 +19,7 @@ export default function WeeklyRack({ onCellClickAdmin }) {
   const [monday, setMonday] = useState(() =>
     startOfWeek(new Date(), { weekStartsOn: 1 }))
   const [rack, setRack] = useState({})
+  const [sel, setSel] = useState(null)
 
   const from = format(monday, 'yyyy-MM-dd')
   const to   = format(addDays(monday, 6), 'yyyy-MM-dd')
@@ -29,11 +31,20 @@ export default function WeeklyRack({ onCellClickAdmin }) {
       .catch(err => { if (!signal?.aborted) console.error(err) })
   }, [from, to])
 
+  const reload = useCallback(() => {
+    loadRack()
+  }, [loadRack])
+
   useEffect(() => {
     const controller = new AbortController()
     loadRack(controller.signal)
     return () => controller.abort()
   }, [loadRack])
+
+  useEffect(() => {
+    window.addEventListener('availabilityUpdated', reload)
+    return () => window.removeEventListener('availabilityUpdated', reload)
+  }, [reload])
 
   /* ----------------- filas de horas únicas --------------- */
   const slots = useMemo(() => {
@@ -56,7 +67,7 @@ export default function WeeklyRack({ onCellClickAdmin }) {
       onCellClickAdmin(ses.sessionDate, ses.startTime, ses.endTime)
       return
     }
-    navigate(`/reservations/new?d=${ses.sessionDate}&s=${ses.startTime}&e=${ses.endTime}`)
+    setSel(ses.id)
   }
 
   const rangeLabel = `${format(monday, 'dd MMM')} – ${format(addDays(monday, 6), 'dd MMM yyyy')}`
@@ -114,11 +125,11 @@ export default function WeeklyRack({ onCellClickAdmin }) {
                             bgcolor: cellColor(pct),
                             color: '#fff',
                             py: .5,
-                            cursor: isFull ? 'not-allowed' : 'pointer',
+                            cursor: 'pointer',
                             textAlign: 'center',
-                            '&:hover': { opacity: isFull ? 1 : .8 }
+                            '&:hover': { opacity: .8 }
                           }}
-                          onClick={() => !isFull && handleCellClick(ses)}
+                          onClick={() => handleCellClick(ses)}
                         >
                           {label}
                         </Box>
@@ -132,5 +143,6 @@ export default function WeeklyRack({ onCellClickAdmin }) {
         </TableBody>
       </Table>
     </Paper>
+    <ReservationDetailsDialog id={sel} open={!!sel} onClose={()=>setSel(null)} />
   )
 }
