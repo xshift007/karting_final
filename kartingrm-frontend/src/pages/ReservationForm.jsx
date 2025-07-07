@@ -10,7 +10,10 @@ import {
   MenuItem, IconButton, Alert, Snackbar, Chip,
   CircularProgress
 } from '@mui/material'
-import { DatePicker } from '@mui/x-date-pickers'
+import { DesktopDatePicker } from '@mui/x-date-pickers/DesktopDatePicker'
+import { TimePicker } from '@mui/x-date-pickers/TimePicker'
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
 import { AddCircle, RemoveCircle } from '@mui/icons-material'
 import { useNotify } from '../hooks/useNotify'
 import { useApiErrorHandler } from '../hooks/useApiErrorHandler'
@@ -196,6 +199,7 @@ export default function ReservationForm({ edit = false }){
 
   /* ---------- UI ---------- */
   return (
+    <LocalizationProvider dateAdapter={AdapterDayjs}>
     <Paper sx={{ p:3, maxWidth:600, mx:'auto' }}>
       <Typography variant="h5" gutterBottom>Crear Reserva</Typography>
 
@@ -221,16 +225,20 @@ export default function ReservationForm({ edit = false }){
           {/* ---------- fecha ---------- */}
           <Controller name="sessionDate" control={control}
             render={({ field }) => (
-              <DatePicker
+              <DesktopDatePicker
+                label="Fecha"
+                inputFormat="YYYY-MM-DD"
                 value={dayjs(field.value)}
                 onChange={val => field.onChange(val ? val.toDate() : null)}
-                label="Fecha"
                 minDate={dayjs()}
-                slotProps={{ textField: {
-                  id: field.name,
-                  error: !!errors.sessionDate,
-                  helperText: errors.sessionDate?.message
-                } }}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    id={field.name}
+                    error={!!errors.sessionDate}
+                    helperText={errors.sessionDate?.message}
+                  />
+                )}
               />
             )}
           />
@@ -238,16 +246,23 @@ export default function ReservationForm({ edit = false }){
           {/* ---------- hora inicio ---------- */}
             <Controller name="startTime" control={control}
               render={({ field }) => (
-                <TextField {...field} id={field.name} type="time" label="Hora inicio"
-                  InputLabelProps={{shrink:true}}
-                inputProps={{ step:300, min:minStart, max:maxEnd }}
-                error={!!errors.startTime}
-                helperText={errors.startTime?.message}
-                onChange={e=>{
-                  field.onChange(e)
-                  const t = e.target.value
-                  setValue('endTime', addMinutes(t, minutes))
-                }}/>
+                <TimePicker
+                  label="Hora inicio"
+                  value={field.value ? dayjs(field.value, 'HH:mm') : null}
+                  onChange={(newVal) => {
+                    const t = newVal ? newVal.format('HH:mm') : ''
+                    field.onChange(t)
+                    if (t) setValue('endTime', addMinutes(t, minutes))
+                  }}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      id={field.name}
+                      error={!!errors.startTime}
+                      helperText={errors.startTime?.message}
+                    />
+                  )}
+                />
             )}
           />
 
@@ -295,11 +310,21 @@ export default function ReservationForm({ edit = false }){
           {/* ---------- hora fin ---------- */}
             <Controller name="endTime" control={control}
               render={({ field }) => (
-                <TextField {...field} id={field.name} type="time" label="Hora fin"
-                  InputLabelProps={{shrink:true}}
-                inputProps={{ readOnly:true }} disabled
-                error={!!errors.endTime}
-                helperText={errors.endTime?.message}/>
+                <TimePicker
+                  label="Hora fin"
+                  value={field.value ? dayjs(field.value, 'HH:mm') : null}
+                  onChange={(newVal) => field.onChange(newVal ? newVal.format('HH:mm') : '')}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      id={field.name}
+                      error={!!errors.endTime}
+                      helperText={errors.endTime?.message}
+                    />
+                  )}
+                  readOnly
+                  disabled
+                />
             )}
           />
 
@@ -373,5 +398,6 @@ export default function ReservationForm({ edit = false }){
         <Alert severity={toast.severity}>{toast.msg}</Alert>
       </Snackbar>
     </Paper>
+    </LocalizationProvider>
   )
 }
