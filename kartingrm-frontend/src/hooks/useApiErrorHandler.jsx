@@ -9,8 +9,8 @@ export const useApiErrorHandler = () => {
   const notify = useNotify()
   return err => {
     const msg =
-      err?.response?.data?.message ||
-      err?.response?.data?.error ||
+      err?.response?.data?.message ??
+      err?.response?.data?.error   ??
       err.message
 
     // mapea mensajes conocidos

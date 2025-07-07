@@ -1,4 +1,22 @@
 // ⚠️ Reemplaza TODO el archivo helpers.js
+// ──────────────────────────────────────────────────────────
+//  Utilities de fecha / hora de uso transversal
+// ──────────────────────────────────────────────────────────
+
+/** Asegura formato HH:mm:ss (LocalTime default). */
+export const ensureSeconds = (t) =>
+  t && t.length === 5               // «14:30»
+    ? `${t}:00`                     // «14:30:00»
+    : t;                            // ya trae segundos
+
+/** Suma minutos a un string HH:mm[:ss] y devuelve HH:mm:ss */
+export const addMinutes = (timeStr, mins) => {
+  const [h = 0, m = 0, s = 0] = timeStr.split(':').map(Number);
+  const date = new Date(0, 0, 0, h, m, s);
+  date.setMinutes(date.getMinutes() + mins);
+  const pad = (x) => String(x).padStart(2, '0');
+  return `${pad(date.getHours())}:${pad(date.getMinutes())}:00`;
+};
 /**
  * Construye dos mapas (precio, minutos) a partir de la respuesta
  *     [{ rate:'LAP_10', price:15000, minutes:30 }, …]

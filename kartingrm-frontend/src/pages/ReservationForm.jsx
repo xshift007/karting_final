@@ -19,7 +19,7 @@ import reservationService from '../services/reservation.service'
 import clientService      from '../services/client.service'
 import sessionService     from '../services/session.service'
 import tariffSvc          from '../services/tariff.service'
-import { computePrice, buildTariffMaps } from '../helpers'
+import { computePrice, buildTariffMaps, addMinutes, ensureSeconds } from '../helpers'
 
 const RATE_TYPES = ['LAP_10','LAP_15','LAP_20']
 const fmt = d => dayjs(d).format('YYYY-MM-DD')
@@ -74,6 +74,7 @@ export default function ReservationForm({ edit = false }){
 
   /*  Pre-cálculo de tarifa y tipo de día  */
   const [preview, setPreview] = useState(null)
+  const [minutes, setMinutes] = useState(0)
 
   /* ---- watchers útiles ---- */
   const sessionDate = watch('sessionDate')
@@ -88,12 +89,13 @@ export default function ReservationForm({ edit = false }){
         rateType)
       .then(p => {
         setPreview(p)
-        if(startTime){
-          setValue('endTime', dayjs(startTime, 'HH:mm').add(p.minutes,'minute').format('HH:mm'))
+        setMinutes(p.minutes)
+        if (startTime) {
+          setValue('endTime', addMinutes(startTime, p.minutes))
         }
       })
       .catch(handleError)
-  }, [sessionDate, rateType, startTime, setValue, handleError])
+  }, [sessionDate, rateType, setValue, startTime, handleError])
   /* ---------- mapas precio / duración ---------- */
   const priceMap = useMemo(() => buildTariffMaps(tariffs).priceMap, [tariffs])
   /* 1) prefills desde la URL (?d, ?s, ?e) */
@@ -155,7 +157,12 @@ export default function ReservationForm({ edit = false }){
         return
       }
 
-      const payload = { ...data, specialDay: preview?.specialDay }
+      const payload = {
+        ...data,
+        startTime: ensureSeconds(data.startTime),
+        endTime  : ensureSeconds(data.endTime || addMinutes(data.startTime, minutes)),
+        specialDay: preview?.specialDay,
+      }
       const promise = edit ? reservationService.update(id, payload)
                            : reservationService.create(payload)
       const res = await promise
@@ -238,7 +245,8 @@ export default function ReservationForm({ edit = false }){
                 helperText={errors.startTime?.message}
                 onChange={e=>{
                   field.onChange(e)
-                  setValue('endTime','')           // vacía fin para recálculo
+                  const t = e.target.value
+                  setValue('endTime', addMinutes(t, minutes))
                 }}/>
             )}
           />
@@ -256,8 +264,9 @@ export default function ReservationForm({ edit = false }){
                       const rate = e.target.value
                       const p = await tariffSvc.preview(sessionDate, rate)
                       setPreview(p)
-                      if(startTime){
-                        setValue('endTime', dayjs(startTime, 'HH:mm').add(p.minutes,'minute').format('HH:mm'))
+                      setMinutes(p.minutes)
+                      if (startTime) {
+                        setValue('endTime', addMinutes(startTime, p.minutes))
                       }
                     } catch(err){
                       handleError(err)
