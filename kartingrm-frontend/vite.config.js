@@ -5,17 +5,21 @@ import process from 'node:process'
 
 export default defineConfig({
   plugins: [react()],
-  server: {
-    port: 5173,
-    proxy: {
-      // Todo lo que empiece con /api lo reenvía al backend
-      '/api': {
-        target: process.env.VITE_BACKEND_API_URL || 'http://localhost:8080',
-        changeOrigin: true,
-        secure: false,
-        // Opcional: elimina el prefijo /api en destino
-        // rewrite: path => path               // <<— NO lo uses: tu backend sí expone /api
+    server: {
+      port: 5173,
+      proxy: {
+        // Todo lo que empiece con /api lo reenvía al backend
+        '/api': {
+          target: process.env.VITE_BACKEND_API_URL || 'http://localhost:8080',
+          changeOrigin: true,
+          secure: false
+        },
+        // Además reenviamos /sessions por compatibilidad
+        '/sessions': {
+          target: process.env.VITE_BACKEND_API_URL || 'http://localhost:8080',
+          changeOrigin: true,
+          secure: false
+        }
       }
     }
-  }
 })
