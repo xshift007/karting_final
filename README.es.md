@@ -7,6 +7,14 @@ Karting Final es un sistema de gestión de reservas para una pista de karts. El 
 
 El backend expone endpoints para gestionar clientes, karts, sesiones, reservas y pagos. También genera recibos PDF y varios informes de ingresos. El frontend consume estas APIs para ofrecer una interfaz de administración.
 
+## Características principales
+
+- Operaciones CRUD para karts, clientes y sesiones
+- Gestión de reservas con control de capacidad
+- Procesamiento de pagos y generación de recibos PDF
+- Informes de ingresos y métricas para Prometheus
+- Notificaciones por correo en las confirmaciones de reserva
+
 ---
 
 ## Estructura del repositorio
@@ -42,6 +50,11 @@ Cada módulo puede trabajarse de forma independiente como se explica a continuac
    mvn package
    java -jar target/kartingrm-0.0.1-SNAPSHOT.jar
    ```
+5. **Ejecutar pruebas**
+   ```bash
+   mvn test
+   ```
+   Las pruebas unitarias cubren la capa de servicios.
 
 ---
 
@@ -60,6 +73,7 @@ Cada módulo puede trabajarse de forma independiente como se explica a continuac
    npm run build
    ```
    El sitio estático se genera en `kartingrm-frontend/dist/` y puede servirse con cualquier servidor web.
+   Define `VITE_BACKEND_API_URL` durante la compilación si el backend se aloja en otra dirección.
 
 ---
 
@@ -67,5 +81,6 @@ Cada módulo puede trabajarse de forma independiente como se explica a continuac
 
 - Algunas funcionalidades envían notificaciones por correo electrónico. Las credenciales para la cuenta SMTP se leen de `src/main/resources/application.properties`. El directorio `secrets` puede usarse para almacenar valores sensibles localmente.
 - Las métricas se exponen mediante el actuador de Spring Boot y el registro de Prometheus.
+- El puerto del servidor y la capacidad por sesión pueden cambiarse con las variables de entorno `SERVER_PORT` y `KARTINGRM_DEFAULT_SESSION_CAPACITY`.
 
 Con ambos servicios en funcionamiento puedes gestionar reservas, monitorizar la disponibilidad de las sesiones y emitir pagos directamente desde la interfaz web.
