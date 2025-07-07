@@ -60,23 +60,17 @@ export default function WeeklyRack({ onCellClickAdmin }) {
 
   const handleCellClick = ses => {
     if (!ses) return
-
-    /* modo administrador */
+    // modo admin (editar sesión)
     if (onCellClickAdmin) {
       onCellClickAdmin(ses.sessionDate, ses.startTime, ses.endTime)
       return
     }
-
-    /* modo estándar: abre detalle si está llena, o formulario si hay cupos */
-    const isFull = ses.participantsCount >= ses.capacity
-    if (isFull) {
-      setSel(ses.id)
-    } else {
-      navigate(
-        `/reservations/new?d=${ses.sessionDate}` +
-        `&s=${ses.startTime}&e=${ses.endTime}`
-      )
-    }
+    const full = ses.participantsCount === ses.capacity
+    full
+      ? setSel(ses.id) // mostrar detalles
+      : navigate(
+          `/reservations/new?d=${ses.sessionDate}&s=${ses.startTime}&e=${ses.endTime}`
+        )
   }
 
   const rangeLabel =
@@ -84,8 +78,7 @@ export default function WeeklyRack({ onCellClickAdmin }) {
 
   /* ------------------- JSX ------------------------------ */
   return (
-    <>
-      <Paper sx={{ p: 2, overflowX: 'auto' }}>
+    <Paper sx={{ p: 2, overflowX: 'auto' }}>
         <Alert severity="info" sx={{ mb: 2 }}>
           Horario de Atención:
           <strong> Lunes–Viernes 14:00–22:00</strong> | 
@@ -152,13 +145,11 @@ export default function WeeklyRack({ onCellClickAdmin }) {
             })}
           </TableBody>
         </Table>
+        <ReservationDetailsDialog
+          id={sel}
+          open={!!sel}
+          onClose={() => setSel(null)}
+        />
       </Paper>
-
-      <ReservationDetailsDialog
-        id={sel}
-        open={Boolean(sel)}
-        onClose={() => setSel(null)}
-      />
-    </>
   )
 }
