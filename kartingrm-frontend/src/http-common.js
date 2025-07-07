@@ -2,17 +2,13 @@
 import axios from 'axios'
 
 /* ──────────────────────────────────────────────────────────
-   Construimos baseURL así:
+   Base URL para Axios
 
-   • Si hay VITE_BACKEND_API_URL (= raíz del backend), añadimos /api
-       Ej.: http://localhost:8080  →  http://localhost:8080/api
-   • Si NO hay variable, asumimos que el front llamará a /api
-     y Vite lo proxy-eará a http://localhost:8080 (dev).
+   Si se define VITE_BACKEND_API_URL usaremos esa ruta como
+   raíz absoluta. De lo contrario asumimos que las llamadas
+   serán relativas y Vite las proxy‑eará durante el desarrollo.
 ─────────────────────────────────────────────────────────── */
-const root = import.meta.env.VITE_BACKEND_API_URL          // puede ser undefined
-const baseURL = root
-  ? `${root.replace(/\/+$/, '')}/api`
-  : '/api'
+const baseURL = import.meta.env.VITE_BACKEND_API_URL || ''
 
 const http = axios.create({
   baseURL,

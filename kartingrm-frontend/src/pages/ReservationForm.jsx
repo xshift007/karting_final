@@ -137,8 +137,10 @@ export default function ReservationForm ({ edit = false }) {
     if (!sessionDate || !rateType) return
     tariffSvc.preview(fmtDate(sessionDate), rateType)
       .then(p => {
-        setPreview(p)
-        setMinutes(p.minutes)          // dur. para efecto #3
+        if (preview?.minutes !== p.minutes) {
+          setPreview(p)
+          setMinutes(p.minutes)        // dur. para efecto #3
+        }
       })
       .catch(handleError)
   }, [sessionDate, rateType, handleError])
@@ -259,17 +261,20 @@ export default function ReservationForm ({ edit = false }) {
             <Controller
               name="sessionDate" control={control}
               render={({ field }) => (
-                <DesktopDatePicker
-                  label="Fecha"
-                  inputFormat="YYYY-MM-DD"
-                  value={dayjs(field.value)}
-                  onChange={val => field.onChange(val ? val.toDate() : null)}
-                  minDate={dayjs()}
-                  renderInput={params =>
-                    <TextField {...params}
-                               error={!!errors.sessionDate}
-                               helperText={errors.sessionDate?.message}/>}
-                />
+                  <DesktopDatePicker
+                    label="Fecha"
+                    inputFormat="YYYY-MM-DD"
+                    value={dayjs(field.value)}
+                    onChange={val => field.onChange(val ? val.toDate() : null)}
+                    minDate={dayjs()}
+                    slots={{ textField: TextField }}
+                    slotProps={{
+                      textField: {
+                        error: !!errors.sessionDate,
+                        helperText: errors.sessionDate?.message
+                      }
+                    }}
+                  />
               )}
             />
 
@@ -277,20 +282,23 @@ export default function ReservationForm ({ edit = false }) {
             <Controller
               name="startTime" control={control}
               render={({ field }) => (
-                <TimePicker
-                  label="Hora inicio"
-                  minTime={dayjs(minStart, 'HH:mm')}
-                  maxTime={dayjs(maxEnd,   'HH:mm')}
-                  value={field.value ? dayjs(field.value, 'HH:mm') : null}
-                  onChange={val => {
-                    const t = val ? val.format('HH:mm') : ''
-                    field.onChange(t)
-                  }}
-                  renderInput={params =>
-                    <TextField {...params}
-                               error={!!errors.startTime}
-                               helperText={errors.startTime?.message}/>}
-                />
+                  <TimePicker
+                    label="Hora inicio"
+                    minTime={dayjs(minStart, 'HH:mm')}
+                    maxTime={dayjs(maxEnd,   'HH:mm')}
+                    value={field.value ? dayjs(field.value, 'HH:mm') : null}
+                    onChange={val => {
+                      const t = val ? val.format('HH:mm') : ''
+                      field.onChange(t)
+                    }}
+                    slots={{ textField: TextField }}
+                    slotProps={{
+                      textField: {
+                        error: !!errors.startTime,
+                        helperText: errors.startTime?.message
+                      }
+                    }}
+                  />
               )}
             />
 
@@ -319,17 +327,20 @@ export default function ReservationForm ({ edit = false }) {
             <Controller
               name="endTime" control={control}
               render={({ field }) => (
-                <TimePicker
-                  label="Hora fin"
-                  minTime={dayjs(minStart, 'HH:mm')}
-                  maxTime={dayjs(maxEnd,   'HH:mm')}
-                  value={field.value ? dayjs(field.value, 'HH:mm') : null}
-                  readOnly disabled
-                  renderInput={params =>
-                    <TextField {...params}
-                               error={!!errors.endTime}
-                               helperText={errors.endTime?.message}/>}
-                />
+                  <TimePicker
+                    label="Hora fin"
+                    minTime={dayjs(minStart, 'HH:mm')}
+                    maxTime={dayjs(maxEnd,   'HH:mm')}
+                    value={field.value ? dayjs(field.value, 'HH:mm') : null}
+                    readOnly disabled
+                    slots={{ textField: TextField }}
+                    slotProps={{
+                      textField: {
+                        error: !!errors.endTime,
+                        helperText: errors.endTime?.message
+                      }
+                    }}
+                  />
               )}
             />
 
