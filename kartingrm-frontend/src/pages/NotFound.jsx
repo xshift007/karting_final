@@ -10,7 +10,7 @@ export default function NotFound() {
       <Typography sx={{ mb: 2 }}>
         Lo sentimos, la página que buscas no existe.
       </Typography>
-      <Button component={RouterLink} to="/home" variant="contained">
+      <Button component={RouterLink} to="/rack" variant="contained">
         Volver al Inicio
       </Button>
     </Paper>
