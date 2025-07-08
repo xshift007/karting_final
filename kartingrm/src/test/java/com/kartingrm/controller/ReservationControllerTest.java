@@ -43,13 +43,16 @@ class ReservationControllerTest {
     @Test
     void postValidReservation() throws Exception {
 
+        /* FECHA SIEMPRE VÁLIDA -------------------------------------- */
+        LocalDate sessionDate = LocalDate.now().plusDays(1);
+
         List<ParticipantDTO> participants = List.of(
                 new ParticipantDTO("Mario Kart",  "mario@kart.com",  false),
                 new ParticipantDTO("Luigi Kart",  "luigi@kart.com",  false));
 
         ReservationRequestDTO req = new ReservationRequestDTO(
                 "C1", 1L,
-                LocalDate.of(2025,5,17),
+                sessionDate,
                 LocalTime.of(10,0), LocalTime.of(10,30),
                 participants,
                 null, RateType.LAP_10);
@@ -61,7 +64,7 @@ class ReservationControllerTest {
         ReservationResponseDTO dto = new ReservationResponseDTO(
                 1L,"C1",
                 new ClientDTO(1L,"Test User","test@example.com"),
-                new SessionDTO(1L, LocalDate.of(2025,5,17),
+                new SessionDTO(1L, sessionDate,
                         LocalTime.of(10,0), LocalTime.of(10,30)),
                 participants.size(),
                 RateType.LAP_10,

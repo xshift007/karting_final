@@ -206,6 +206,14 @@
 				</executions>
 			</plugin>
 
+			<!-- === AÑADE AQUÍ SonarQube Scanner for Maven === -->
+			<plugin>
+				<groupId>org.sonarsource.scanner.maven</groupId>
+				<artifactId>sonar-maven-plugin</artifactId>
+				<version>5.1.0.4751</version>
+			</plugin>
+			<!-- === FIN SonarQube Scanner === -->
+
 			<!-- Resources (no filtrar .properties) -->
 			<plugin>
 				<artifactId>maven-resources-plugin</artifactId>
